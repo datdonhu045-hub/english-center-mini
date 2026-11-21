@@ -1,3 +1,4 @@
+import { authSessionStore } from '@/features/auth/services/authService'
 import { mockTests } from '@/features/test-online/mocks/testMockData'
 import { gradeTestAttempt } from '@/features/test-online/services/scoringService'
 import type {
@@ -104,6 +105,7 @@ function ensureSeededSampleHistory(): void {
   const attempt1Id = 'ATT-20261110-101'
   const attempt1: TestAttempt = {
     id: attempt1Id,
+    studentId: 'stu-001',
     testId: test1.id,
     testSlug: test1.slug,
     testCode: test1.code,
@@ -147,6 +149,7 @@ function ensureSeededSampleHistory(): void {
   const attempt2Id = 'ATT-20261116-205'
   const attempt2: TestAttempt = {
     id: attempt2Id,
+    studentId: 'stu-001',
     testId: test1.id,
     testSlug: test1.slug,
     testCode: test1.code,
@@ -252,8 +255,10 @@ export const attemptStorageService = {
     const dateStamp = startedAt.slice(0, 10).replace(/-/g, '')
     const attemptId = `ATT-${dateStamp}-${randomSuffix}`
 
+    const currentUser = authSessionStore.getCurrentUser()
     const attempt: TestAttempt = {
       id: attemptId,
+      studentId: currentUser?.id ?? 'guest',
       testId: test.id,
       testSlug: test.slug,
       testCode: test.code,

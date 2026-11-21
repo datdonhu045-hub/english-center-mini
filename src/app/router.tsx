@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import PublicLayout from '@/layouts/PublicLayout'
+import StudentLayout from '@/layouts/StudentLayout'
 import RouteErrorPage from '@/pages/RouteErrorPage'
 
 import HomePage from '@/pages/HomePage'
@@ -34,6 +35,18 @@ import TestResultPage from '@/features/test-online/pages/TestResultPage'
 import TestHistoryPage from '@/features/test-online/pages/TestHistoryPage'
 import TestHistoryDetailPage from '@/features/test-online/pages/TestHistoryDetailPage'
 
+import { AuthPage } from '@/features/auth/pages/AuthPage'
+import { ForgotPasswordPage } from '@/features/auth/pages/ForgotPasswordPage'
+import { ResetPasswordPage } from '@/features/auth/pages/ResetPasswordPage'
+import { ChangePasswordPage } from '@/features/auth/pages/ChangePasswordPage'
+import {
+  StudentAssignmentsPage,
+  StudentDashboardPage,
+  StudentExamResultsPage,
+  StudentLearningPlanPage,
+  StudentSchedulePage,
+} from '@/features/student-portal'
+
 export const router = createBrowserRouter([
   // Các trang làm bài trắc nghiệm độc lập toàn màn hình (không chứa Header và Footer của website)
   {
@@ -45,6 +58,21 @@ export const router = createBrowserRouter([
     path: '/study-zone/practice/:exerciseId',
     element: <StudyExercisePage />,
     errorElement: <RouteErrorPage />,
+  },
+  // Khu vực CỔNG HỌC VIÊN (HMC TOEIC Student Portal – Khóa học của tôi)
+  {
+    element: <StudentLayout />,
+    errorElement: <RouteErrorPage />,
+    children: [
+      { path: '/student', element: <Navigate to="/student/dashboard" replace /> },
+      { path: '/student/my-courses', element: <Navigate to="/student/dashboard" replace /> },
+      { path: '/student/my-courses/:enrollmentId', element: <Navigate to="/student/dashboard" replace /> },
+      { path: '/student/dashboard', element: <StudentDashboardPage /> },
+      { path: '/student/learning-plan', element: <StudentLearningPlanPage /> },
+      { path: '/student/assignments', element: <StudentAssignmentsPage /> },
+      { path: '/student/exam-results', element: <StudentExamResultsPage /> },
+      { path: '/student/schedule', element: <StudentSchedulePage /> },
+    ],
   },
   {
     element: <PublicLayout />,
@@ -91,6 +119,15 @@ export const router = createBrowserRouter([
       { path: '/test-online/result/:attemptId', element: <TestResultPage /> },
       { path: '/test-history', element: <TestHistoryPage /> },
       { path: '/test-history/:attemptId', element: <TestHistoryDetailPage /> },
+
+      // Khu vực Hệ thống Tài khoản Học viên
+      { path: '/login', element: <AuthPage defaultTab="login" /> },
+      { path: '/register', element: <AuthPage defaultTab="register" /> },
+      { path: '/forgot-password', element: <ForgotPasswordPage /> },
+      { path: '/reset-password', element: <ResetPasswordPage /> },
+      { path: '/change-password', element: <ChangePasswordPage /> },
+      { path: '/student/history', element: <TestHistoryPage /> },
+      { path: '/student/history/:attemptId', element: <TestHistoryDetailPage /> },
 
       { path: '/contact', element: <ContactPage /> },
       { path: '/about/branches', element: <BranchesPage /> },

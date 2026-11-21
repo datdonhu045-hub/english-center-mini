@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useBlocker, useNavigate, useParams } from 'react-router-dom'
 import {
   ArrowLeft,
@@ -51,10 +51,12 @@ export default function StudyExercisePage() {
 
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [exitModalOpen, setExitModalOpen] = useState(false)
-  const [allowLeaveWithoutPrompt, setAllowLeaveWithoutPrompt] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [navDrawerOpen, setNavDrawerOpen] = useState(false)
+
+  // Dùng useRef để cờ cho phép thoát có hiệu lực tức thì trước khi navigate() kích hoạt useBlocker (tránh phải bấm Thoát 2 lần)
+  const allowLeaveRef = useRef(false)
 
   const [attemptHistory, setAttemptHistory] = useState<ExerciseAttemptResult[]>([])
   const [viewingAttemptIndex, setViewingAttemptIndex] = useState<number | null>(null)
@@ -67,13 +69,13 @@ export default function StudyExercisePage() {
       : null
   const isSubmitted = Boolean(activeResult)
 
-  const isDoingExercise = Boolean(
-    exercise && !isSubmitted && !submitting && !allowLeaveWithoutPrompt,
-  )
+  const isDoingExercise = Boolean(exercise && !isSubmitted && !submitting)
 
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
-      isDoingExercise && currentLocation.pathname !== nextLocation.pathname,
+      isDoingExercise &&
+      !allowLeaveRef.current &&
+      currentLocation.pathname !== nextLocation.pathname,
   )
 
   useEffect(() => {
@@ -174,9 +176,10 @@ export default function StudyExercisePage() {
       setConfirmOpen(false)
     } catch (err) {
       setSubmitError(
-        err instanceof Error ? err.message : 'Không thể nộp bài lúc này. Vui lòng thử lại.',
+        err instanceof Error
+          ? err.message
+          : 'Không thể nộp bài lúc này. Bài làm của bạn vẫn được giữ nguyên, hãy thử lại.',
       )
-      setConfirmOpen(false)
     } finally {
       setSubmitting(false)
     }
@@ -200,13 +203,12 @@ export default function StudyExercisePage() {
   }
 
   const handleConfirmExit = () => {
+    allowLeaveRef.current = true
+    setExitModalOpen(false)
     if (blocker.state === 'blocked') {
-      setExitModalOpen(false)
       blocker.proceed()
       return
     }
-    setAllowLeaveWithoutPrompt(true)
-    setExitModalOpen(false)
     navigate(topicPath)
   }
 
@@ -435,11 +437,15 @@ export default function StudyExercisePage() {
 
       <SubmissionModal
         open={confirmOpen}
-        exerciseTitle={`${exercise.title} – ${exercise.subtitle}`}
+        exerciseTitle={`${exercise.title} · ${exercise.subtitle}`}
         totalQuestions={totalQuestions}
         answeredCount={answeredCount}
         submitting={submitting}
-        onCancel={() => setConfirmOpen(false)}
+        errorMessage={submitError}
+        onCancel={() => {
+          setSubmitError(null)
+          setConfirmOpen(false)
+        }}
         onConfirm={handleConfirmSubmit}
       />
 

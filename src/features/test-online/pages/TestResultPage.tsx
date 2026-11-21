@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, ArrowRight, History, LayoutGrid, X } from 'lucide-react'
 import { EmptyBlock, ErrorBlock, LoadingBlock } from '@/components/ui/StateViews'
@@ -57,6 +57,13 @@ export default function TestResultPage() {
 
   const currentQuestionItem =
     flatSingleQuestions[activeQuestionCursor] ?? flatSingleQuestions[0]
+
+  // Tự động cuộn lên đầu trang khi chuyển câu ở chế độ xem "Theo câu"
+  useEffect(() => {
+    if (viewStyle === 'single') {
+      window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior })
+    }
+  }, [activeQuestionCursor, viewStyle])
 
   const handleJumpToQuestion = (
     _partNumber: ToeicPartNumber,

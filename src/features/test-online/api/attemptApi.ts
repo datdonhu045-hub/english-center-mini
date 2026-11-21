@@ -115,6 +115,14 @@ export const attemptApi = {
     partNumber: ToeicPartNumber,
     firstQuestionId?: string,
   ): Promise<TestAttempt> {
+    if (!USE_MOCK_API) {
+      return httpClient.post<TestAttempt>(API_ENDPOINTS.testOnline.saveProgress(attemptId), {
+        action: 'confirm_part_intro',
+        partNumber,
+        firstQuestionId,
+      })
+    }
+
     const current = attemptStorageService.getAttemptById(attemptId)
     if (!current) {
       throw new Error('Không tìm thấy lượt thi.')

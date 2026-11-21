@@ -173,6 +173,8 @@ export interface StartAttemptPayload {
 
 export interface TestAttempt {
   id: string
+  /** ID học viên thực hiện lượt thi (phân tách dữ liệu giữa các tài khoản) */
+  studentId?: string
   testId: string
   testSlug: string
   testCode: string

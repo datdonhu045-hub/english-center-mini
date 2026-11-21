@@ -2,6 +2,7 @@ import { USE_MOCK_API } from '@/services/api/apiConfig'
 import { API_ENDPOINTS } from '@/services/api/endpoints'
 import { ApiClientError, httpClient } from '@/services/api/httpClient'
 import { mockDelay } from '@/services/api/mockUtils'
+import { authSessionStore } from '@/features/auth/services/authService'
 import { mockTests } from '@/features/test-online/mocks/testMockData'
 import { attemptStorageService } from '@/features/test-online/services/attemptService'
 import type {
@@ -30,15 +31,31 @@ export const historyApi = {
    */
   async getHistory(params?: TestHistoryFilterParams): Promise<TestHistoryRecord[]> {
     if (!USE_MOCK_API) {
-      return httpClient.get<TestHistoryRecord[]>(API_ENDPOINTS.testOnline.historyList)
+      return httpClient.get<TestHistoryRecord[]>(API_ENDPOINTS.testOnline.historyList, {
+        keyword: params?.keyword,
+        testSlug: params?.testSlug,
+        status: params?.status,
+        fromDate: params?.fromDate,
+        toDate: params?.toDate,
+        sortOrder: params?.sortOrder,
+      })
     }
     await mockDelay(100)
     const attemptsMap = attemptStorageService.getAllAttemptsMap()
     const resultsMap = attemptStorageService.getAllResultsMap()
+    const currentUserId = authSessionStore.getCurrentUser()?.id ?? 'guest'
 
-    const chronological = Object.values(attemptsMap).sort(
-      (a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime(),
-    )
+    const chronological = Object.values(attemptsMap)
+      .filter((att) => {
+        const ownerId = att.studentId ?? 'stu-001'
+        if (currentUserId === 'guest') {
+          return ownerId === 'guest' || ownerId === 'stu-001'
+        }
+        return ownerId === currentUserId
+      })
+      .sort(
+        (a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime(),
+      )
 
     const countPerTest: Record<string, number> = {}
     const records: TestHistoryRecord[] = chronological.map((attempt) => {

@@ -81,3 +81,20 @@ body {
     animation: none;
   }
 }
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  .print-card {
+    break-inside: avoid;
+    border-color: #999999 !important;
+  }
+  .print-expand {
+    display: block !important;
+  }
+}

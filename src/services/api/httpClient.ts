@@ -45,7 +45,7 @@ function unwrapPayload<T>(payload: unknown): T {
 }
 
 async function request<T>(
-  method: 'GET' | 'POST',
+  method: 'GET' | 'POST' | 'PATCH' | 'DELETE',
   endpoint: string,
   options?: { params?: QueryParams; body?: unknown },
 ): Promise<T> {
@@ -64,8 +64,8 @@ async function request<T>(
     response = await fetch(buildUrl(endpoint, options?.params), {
       method,
       headers,
-      // Website công khai không cần cookie; khi cần đăng nhập học viên sẽ cấu hình ở bước Auth
-      credentials: 'omit',
+      // Cho phép gửi/nhận HttpOnly Cookie xác thực khi kết nối Backend Node.js
+      credentials: 'include',
       body: options?.body !== undefined ? JSON.stringify(options.body) : undefined,
       signal: controller.signal,
     })
@@ -99,4 +99,6 @@ async function request<T>(
 export const httpClient = {
   get: <T>(endpoint: string, params?: QueryParams) => request<T>('GET', endpoint, { params }),
   post: <T>(endpoint: string, body?: unknown) => request<T>('POST', endpoint, { body }),
+  patch: <T>(endpoint: string, body?: unknown) => request<T>('PATCH', endpoint, { body }),
+  delete: <T>(endpoint: string, params?: QueryParams) => request<T>('DELETE', endpoint, { params }),
 }

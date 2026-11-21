@@ -1,9 +1,12 @@
 import { useCallback } from 'react'
 import { useAsync } from '@/hooks/useAsync'
+import { useAuth } from '@/features/auth/hooks/useAuth'
 import { historyApi } from '@/features/test-online/api/historyApi'
 import type { TestHistoryFilterParams } from '@/features/test-online/types/test.types'
 
 export function useTestHistory(filters?: TestHistoryFilterParams) {
+  const { user } = useAuth()
+  const studentScope = user?.id ?? 'guest'
   const keyword = filters?.keyword ?? ''
   const testSlug = filters?.testSlug ?? ''
   const status = filters?.status ?? 'all'
@@ -24,9 +27,13 @@ export function useTestHistory(filters?: TestHistoryFilterParams) {
     [keyword, testSlug, status, fromDate, toDate, sortOrder],
   )
 
-  return useAsync(fetcher, [keyword, testSlug, status, fromDate, toDate, sortOrder], {
-    queryKey: `test-online:history:${keyword}:${testSlug}:${status}:${fromDate}:${toDate}:${sortOrder}`,
-  })
+  return useAsync(
+    fetcher,
+    [studentScope, keyword, testSlug, status, fromDate, toDate, sortOrder],
+    {
+      queryKey: `test-online:history:${studentScope}:${keyword}:${testSlug}:${status}:${fromDate}:${toDate}:${sortOrder}`,
+    },
+  )
 }
 
 export function useTestHistoryDetail(attemptId: string) {

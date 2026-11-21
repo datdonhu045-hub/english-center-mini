@@ -46,4 +46,31 @@ export const API_ENDPOINTS = {
   consultations: {
     submit: '/public/consultations',
   },
+  auth: {
+    login: '/auth/login',
+    register: '/auth/register',
+    forgotPassword: '/auth/forgot-password',
+    resetPassword: '/auth/reset-password',
+    changePassword: '/auth/change-password',
+    logout: '/auth/logout',
+    me: '/auth/me',
+  },
+  studentCourses: {
+    myEnrollments: '/student/my-courses',
+    enrollmentDetail: (enrollmentId: string) =>
+      `/student/my-courses/${encodeURIComponent(enrollmentId)}`,
+  },
+  studentPortal: {
+    profileMe: '/students/me',
+    enrollmentsMe: '/students/me/enrollments',
+    learningPlan: '/learning-plans/me',
+    assignmentsList: '/assignments/me',
+    submitAssignment: (assignmentId: string) =>
+      `/assignments/${encodeURIComponent(assignmentId)}/submissions`,
+    attendanceMe: '/attendance/me',
+    examResultsMe: '/exam-results/me',
+    scheduleMe: '/schedules/me',
+    supportRequestsMe: '/support-requests/me',
+    createSupportRequest: '/support-requests',
+  },
 } as const

@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
-import { ChevronDown, CircleUser, Menu, Phone, Search, X } from 'lucide-react'
+import { ChevronDown, Menu, Phone, Search, X } from 'lucide-react'
 import { centerInfo, navItems } from '@/config/center-info'
+import UserAccountDropdown from '@/features/auth/components/UserAccountDropdown'
 
 const navBase =
   'flex items-center gap-1 whitespace-nowrap text-xs 2xl:text-[13px] font-bold uppercase ec-shadow-text transition hover:text-[#F26522]'
@@ -28,34 +29,8 @@ export default function Header() {
             {centerInfo.name} – {centerInfo.slogan}
           </div>
 
-          {/* Menu Tài khoản học viên kèm liên kết Lịch sử bài thi */}
-          <div className="group relative flex items-center">
-            <Link
-              to="/test-history"
-              className="flex items-center gap-1.5 py-1 text-xs font-bold uppercase tracking-wider text-[#243B53] transition hover:text-[#2878B8]"
-            >
-              <CircleUser className="h-5 w-5 text-[#2878B8]" />
-              <span>Tài khoản</span>
-              <ChevronDown className="h-3.5 w-3.5 text-[#718096]" />
-            </Link>
-
-            <div className="invisible absolute right-0 top-full z-50 w-52 pt-1 opacity-0 transition group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
-              <div className="overflow-hidden rounded-xl border border-[#DCEAF3] bg-white py-1.5 shadow-xl">
-                <Link
-                  to="/test-history"
-                  className="block px-4 py-2 text-xs font-extrabold text-[#243B53] transition hover:bg-[#EAF6FD] hover:text-[#2878B8]"
-                >
-                  Lịch sử bài thi
-                </Link>
-                <Link
-                  to="/test-online"
-                  className="block px-4 py-2 text-xs font-semibold text-[#718096] transition hover:bg-[#EAF6FD] hover:text-[#2878B8]"
-                >
-                  Danh sách đề thi Online
-                </Link>
-              </div>
-            </div>
-          </div>
+          {/* Menu Tài khoản học viên */}
+          <UserAccountDropdown />
         </div>
       </div>
 

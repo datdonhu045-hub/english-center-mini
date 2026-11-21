@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useBlocker, useNavigate, useParams } from 'react-router-dom'
 import {
   ArrowLeft,
@@ -44,10 +44,13 @@ export default function TestTakingPage() {
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null)
   const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(null)
   const [submitModalOpen, setSubmitModalOpen] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const [exitModalOpen, setExitModalOpen] = useState(false)
-  const [allowLeaveWithoutPrompt, setAllowLeaveWithoutPrompt] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [navDrawerOpen, setNavDrawerOpen] = useState(false)
+
+  // Dùng useRef để cờ cho phép thoát có hiệu lực tức thì trước khi navigate() kích hoạt useBlocker (tránh phải bấm Thoát 2 lần)
+  const allowLeaveRef = useRef(false)
 
   const attempt =
     localAttempt && localAttempt.id === session?.attempt.id
@@ -56,13 +59,14 @@ export default function TestTakingPage() {
   const test = session?.test ?? null
 
   const isExamInProgress = Boolean(
-    attempt && attempt.status === 'in_progress' && !submitting && !allowLeaveWithoutPrompt,
+    attempt && attempt.status === 'in_progress' && !submitting,
   )
 
   // Chặn người dùng bấm nút Back của trình duyệt hoặc điều hướng rời trang khi đang làm dở bài thi
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
       isExamInProgress &&
+      !allowLeaveRef.current &&
       currentLocation.pathname !== nextLocation.pathname &&
       !nextLocation.pathname.startsWith('/test-online/result/'),
   )
@@ -84,17 +88,6 @@ export default function TestTakingPage() {
       navigate(`/test-online/result/${attempt.id}`, { replace: true })
     }
   }, [attempt, navigate])
-
-  // Luôn cuộn về đầu trang khi bắt đầu thi, khi chuyển từ màn hình giới thiệu vào câu hỏi hoặc khi chuyển câu / Part
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior })
-  }, [
-    attemptId,
-    attempt?.currentPartNumber,
-    attempt?.currentStage,
-    selectedGroupId,
-    selectedQuestionId,
-  ])
 
   const activeParts = useMemo(() => {
     if (!test || !attempt) return []
@@ -163,11 +156,12 @@ export default function TestTakingPage() {
   const handleAutoExpire = useCallback(async () => {
     if (!attempt || attempt.status !== 'in_progress' || submitting) return
     setSubmitting(true)
-    setAllowLeaveWithoutPrompt(true)
+    allowLeaveRef.current = true
     try {
       await attemptApi.submitAttempt(attempt.id, 'expired')
       navigate(`/test-online/result/${attempt.id}`, { replace: true })
     } catch {
+      allowLeaveRef.current = false
       setSubmitting(false)
     }
   }, [attempt, submitting, navigate])
@@ -316,6 +310,17 @@ export default function TestTakingPage() {
 
   const currentStep = examSteps[currentStepIndex]
 
+  // Chỉ cuộn về đầu trang khi thực sự chuyển Bước làm bài (chuyển cụm câu hỏi / chuyển câu đơn), chuyển Part hoặc chuyển màn hình giới thiệu.
+  // Tuyệt đối KHÔNG cuộn lên đầu trang khi học viên đang bấm chọn đáp án của các câu thứ 2, thứ 3 bên dưới trong cùng một cụm câu hỏi.
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior })
+  }, [
+    attemptId,
+    attempt?.currentPartNumber,
+    attempt?.currentStage,
+    currentStepIndex,
+  ])
+
   // Khi 1 nhóm audio Listening phát xong -> Khóa vĩnh viễn nhóm audio đó & tự động chuyển theo trình tự đề thi
   const handleAudioPlayCompleted = async (audioGroupId: string) => {
     if (!attempt || !currentPart || !currentGroup) return
@@ -395,30 +400,45 @@ export default function TestTakingPage() {
     const targetGroup = targetPart?.questionGroups.find((g) => g.id === groupId)
     if (!targetPart || !targetGroup) return
     setNavDrawerOpen(false)
+    const isSameMultiQuestionGroup =
+      currentGroup?.id === targetGroup.id &&
+      targetGroup.stimulus.length > 0 &&
+      targetGroup.questions.length > 1
     void moveToPartAndGroup(targetPart, targetGroup, questionId)
+    if (isSameMultiQuestionGroup) {
+      window.setTimeout(() => {
+        const el = document.getElementById(`test-question-${questionId}`)
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }, 40)
+    }
   }
 
   const handleConfirmSubmit = async () => {
     if (!attempt || submitting) return
     setSubmitting(true)
-    setAllowLeaveWithoutPrompt(true)
+    setSubmitError(null)
+    allowLeaveRef.current = true
     try {
       await attemptApi.submitAttempt(attempt.id, 'submitted')
       navigate(`/test-online/result/${attempt.id}`, { replace: true })
-    } catch {
+    } catch (err) {
       setSubmitting(false)
-      setAllowLeaveWithoutPrompt(false)
+      allowLeaveRef.current = false
+      setSubmitError(
+        err instanceof Error
+          ? err.message
+          : 'Không thể nộp bài lúc này. Bài làm của bạn vẫn được giữ nguyên, hãy thử lại.',
+      )
     }
   }
 
   const handleConfirmExitExam = () => {
+    allowLeaveRef.current = true
+    setExitModalOpen(false)
     if (blocker.state === 'blocked') {
-      setExitModalOpen(false)
       blocker.proceed()
       return
     }
-    setAllowLeaveWithoutPrompt(true)
-    setExitModalOpen(false)
     if (test) {
       navigate(`/test-online/${test.slug}`)
     } else {
@@ -695,11 +715,21 @@ export default function TestTakingPage() {
       {/* Modal xác nhận nộp bài thi */}
       <TestSubmitModal
         open={submitModalOpen}
+        examName={test.title}
+        examType={
+          attempt.practiceMode === 'full'
+            ? 'TOEIC Listening & Reading'
+            : `Luyện theo Part (${attempt.selectedParts.map((p) => `Part ${p}`).join(', ')})`
+        }
         totalQuestions={totalQuestions}
         answeredCount={answeredCount}
         flaggedCount={attempt.flaggedQuestionIds.length}
         submitting={submitting}
-        onCancel={() => setSubmitModalOpen(false)}
+        errorMessage={submitError}
+        onCancel={() => {
+          setSubmitError(null)
+          setSubmitModalOpen(false)
+        }}
         onConfirmSubmit={handleConfirmSubmit}
       />
 
