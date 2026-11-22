@@ -8,3 +8,4 @@ export function usePageTitle(title?: string | null) {
     document.title = `${title} | ${centerInfo.name}`
   }, [title])
 }
+//
