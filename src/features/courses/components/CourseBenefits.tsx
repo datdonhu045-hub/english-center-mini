@@ -13,7 +13,7 @@ export default function CourseBenefits({ courseName, benefits }: CourseBenefitsP
   const hasImage = Boolean(benefits.image)
 
   return (
-    <section className="bg-[#2039EE] py-14 text-white sm:py-20">
+    <section className="bg-[#75BDEB] py-14 text-white sm:py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div
           className={`grid grid-cols-1 items-center gap-10 lg:gap-14 ${

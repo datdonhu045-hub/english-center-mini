@@ -11,13 +11,13 @@ export default function ArticleAttachmentsBox({ attachments }: { attachments: Ar
   if (safeItems.length === 0) return null
 
   return (
-    <section className="mt-8 rounded-xl border border-blue-200 bg-[#EEF2FF]/70 p-5">
-      <h3 className="flex items-center gap-2 text-sm font-extrabold uppercase tracking-wide text-[#2939F5]">
+    <section className="mt-8 rounded-xl border border-[#A7D8F5] bg-[#EAF6FD]/70 p-5">
+      <h3 className="flex items-center gap-2 text-sm font-extrabold uppercase tracking-wide text-[#2878B8]">
         <FileText className="h-4 w-4" />
         Tài liệu đính kèm ({safeItems.length})
       </h3>
 
-      <ul className="mt-3 divide-y divide-blue-200/60">
+      <ul className="mt-3 divide-y divide-[#DCEAF3]">
         {safeItems.map(({ att, href }) => (
           <li
             key={att.id}
@@ -36,7 +36,7 @@ export default function ArticleAttachmentsBox({ attachments }: { attachments: Ar
               href={href}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-[#2939F5] px-4 py-2 text-xs font-bold uppercase tracking-wide text-white transition hover:bg-[#202DB5]"
+              className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-[#2878B8] px-4 py-2 text-xs font-bold uppercase tracking-wide text-white transition hover:bg-[#1f5f94]"
             >
               <Download className="h-3.5 w-3.5" />
               Tải tài liệu

@@ -51,7 +51,7 @@ export default function CourseExtraSections({ course }: { course: Course }) {
                     key={hl}
                     className="flex items-start gap-3 rounded-xl border border-[#DCEAF3] bg-[#F5FAFE] p-4"
                   >
-                    <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-[#2039EE]" />
+                    <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-[#2878B8]" />
                     <span className="text-sm font-semibold text-[#243B53]">{hl}</span>
                   </div>
                 ))}
@@ -76,7 +76,7 @@ export default function CourseExtraSections({ course }: { course: Course }) {
                   className="rounded-2xl border border-[#DCEAF3] bg-white p-6 shadow-sm"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="rounded-md bg-[#EEF2FF] px-2.5 py-1 text-xs font-extrabold uppercase text-[#2039EE]">
+                    <span className="rounded-md bg-[#EAF6FD] px-2.5 py-1 text-xs font-extrabold uppercase text-[#2878B8]">
                       Chặng {idx + 1}
                     </span>
                     {mod.sessions && (
@@ -185,7 +185,7 @@ export default function CourseExtraSections({ course }: { course: Course }) {
                       type="button"
                       aria-expanded={isOpen}
                       onClick={() => setOpenFaqId(isOpen ? null : faq.id)}
-                      className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left text-sm font-bold text-[#243B53] transition hover:bg-[#EEF2FF]/60 sm:text-base"
+                      className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left text-sm font-bold text-[#243B53] transition hover:bg-[#EAF6FD]/60 sm:text-base"
                     >
                       <span>{faq.question}</span>
                       <ChevronDown

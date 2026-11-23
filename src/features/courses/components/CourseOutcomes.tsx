@@ -13,7 +13,7 @@ export default function CourseOutcomes({ courseName, expectedOutcomes }: CourseO
   const hasMedia = Boolean(expectedOutcomes.media?.thumbnailUrl || expectedOutcomes.media?.videoUrl)
 
   return (
-    <section className="border-t border-white/20 bg-[#2039EE] py-14 text-white sm:py-20">
+    <section className="border-t border-white/25 bg-[#75BDEB] py-14 text-white sm:py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Tiêu đề căn giữa bám sát hình tham khảo số 3 */}
         <div className="mb-12 text-center">

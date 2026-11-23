@@ -19,7 +19,7 @@ export default function ScheduleTable({ items, startIndex, onConsultClick }: Sch
       <div className="overflow-x-auto">
         <table className="w-full min-w-[900px] border-collapse text-left">
           <thead>
-            <tr className="bg-[#293CF5] text-xs font-bold uppercase tracking-wider text-white sm:text-[13px]">
+            <tr className="bg-[#75BDEB] text-xs font-bold uppercase tracking-wider text-white sm:text-[13px]">
               <th scope="col" className="w-14 px-3 py-3.5 text-center">
                 STT
               </th>
@@ -55,7 +55,7 @@ export default function ScheduleTable({ items, startIndex, onConsultClick }: Sch
               const isDisabled = item.status === 'cancelled'
 
               return (
-                <tr key={item.id} className="transition-colors hover:bg-[#EEF2FF]/60">
+                <tr key={item.id} className="transition-colors hover:bg-[#EAF6FD]/60">
                   <td className="px-3 py-4 text-center text-xs font-semibold text-[#777777]">{stt}</td>
 
                   <td className="px-4 py-4">
@@ -87,7 +87,7 @@ export default function ScheduleTable({ items, startIndex, onConsultClick }: Sch
                       type="button"
                       disabled={isDisabled}
                       onClick={() => onConsultClick(item)}
-                      className="whitespace-nowrap rounded border border-[#536BFF] bg-white px-4 py-1.5 text-xs font-semibold text-[#293CF5] transition-colors hover:bg-[#293CF5] hover:text-white disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-100 disabled:text-gray-400"
+                      className="whitespace-nowrap rounded border border-[#75BDEB] bg-white px-4 py-1.5 text-xs font-semibold text-[#2878B8] transition-colors hover:bg-[#2878B8] hover:text-white disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-100 disabled:text-gray-400"
                     >
                       Nhận tư vấn
                     </button>

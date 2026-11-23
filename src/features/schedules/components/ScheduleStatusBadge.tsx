@@ -14,8 +14,8 @@ const STATUS_MAP: Record<ScheduleStatus, StatusConfig> = {
   },
   upcoming: {
     label: 'Sắp khai giảng',
-    badgeClass: 'border-blue-200 bg-[#EEF2FF] text-[#293CF5]',
-    dotClass: 'bg-[#293CF5]',
+    badgeClass: 'border-[#A7D8F5] bg-[#EAF6FD] text-[#2878B8]',
+    dotClass: 'bg-[#75BDEB]',
   },
   full: {
     label: 'Đã đủ học viên',

@@ -9,7 +9,7 @@ export default function RelatedArticlesSection({ articles }: { articles: Article
 
   return (
     <section className="mt-8 rounded-xl border border-[#DCEAF3] bg-white p-5 shadow-sm sm:p-6">
-      <h2 className="mb-4 border-l-4 border-[#2939F5] pl-3 text-lg font-extrabold uppercase text-[#243B53]">
+      <h2 className="mb-4 border-l-4 border-[#75BDEB] pl-3 text-lg font-extrabold uppercase text-[#243B53]">
         Bài viết liên quan
       </h2>
 
@@ -20,7 +20,7 @@ export default function RelatedArticlesSection({ articles }: { articles: Article
             <Link
               key={item.id}
               to={to}
-              className="group flex items-start gap-3 rounded-lg border border-[#DCEAF3] p-3 transition hover:border-[#2939F5]/40 hover:bg-[#F5FAFE]"
+              className="group flex items-start gap-3 rounded-lg border border-[#DCEAF3] p-3 transition hover:border-[#75BDEB] hover:bg-[#F5FAFE]"
             >
               <ImageBox
                 src={item.thumbnail}
@@ -29,7 +29,7 @@ export default function RelatedArticlesSection({ articles }: { articles: Article
                 className="h-16 w-24 shrink-0 rounded-md"
               />
               <div className="min-w-0">
-                <h3 className="line-clamp-2 text-sm font-bold leading-snug text-[#222222] transition group-hover:text-[#2939F5]">
+                <h3 className="line-clamp-2 text-sm font-bold leading-snug text-[#222222] transition group-hover:text-[#2878B8]">
                   {item.title}
                 </h3>
                 <span className="mt-1.5 flex items-center gap-1 text-xs text-[#718096]">

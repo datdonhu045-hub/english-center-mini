@@ -488,7 +488,7 @@ export default function TestTakingPage() {
   return (
     <div className="ec-reading-font min-h-screen bg-[#F5FAFE] pb-16">
       {/* Thanh thông tin cố định phía trên cùng của phòng thi */}
-      <div className="sticky top-0 z-30 border-b border-[#DCEAF3] bg-[#1E4E79] text-white shadow-sm">
+      <div className="sticky top-0 z-30 border-b border-[#DCEAF3] bg-[#75BDEB] text-white shadow-sm">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 lg:px-6">
           {/* Nút thoát có xác nhận & Tên đề thi */}
           <div className="flex items-center gap-3">
@@ -496,16 +496,16 @@ export default function TestTakingPage() {
               type="button"
               onClick={() => setExitModalOpen(true)}
               title="Rời phòng thi về trang thiết lập đề (có xác nhận)"
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/25 bg-white/10 text-white transition hover:bg-white/20"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/40 bg-white/15 text-white transition hover:bg-white/25"
             >
               <ArrowLeft className="h-4 w-4" />
             </button>
             <div className="flex items-center gap-2.5">
-              <span className="text-sm font-bold uppercase tracking-wide text-white sm:text-base">
+              <span className="text-sm font-bold uppercase tracking-wide text-white ec-shadow-text sm:text-base">
                 HỆ THỐNG THI TRỰC TUYẾN
               </span>
-              <span className="hidden text-white/40 sm:inline">•</span>
-              <h1 className="hidden text-sm font-extrabold uppercase text-[#A7D8F5] sm:inline">
+              <span className="hidden text-white/60 sm:inline">•</span>
+              <h1 className="hidden text-sm font-extrabold uppercase text-white ec-shadow-text sm:inline">
                 {test.title}
               </h1>
             </div>
@@ -532,7 +532,7 @@ export default function TestTakingPage() {
               className={`flex h-9 w-9 items-center justify-center rounded-lg transition ${
                 navDrawerOpen
                   ? 'bg-[#F26522] text-white shadow-sm'
-                  : 'bg-[#75BDEB] text-white hover:bg-[#5aaee3]'
+                  : 'bg-[#2878B8] text-white hover:bg-[#1f5f94]'
               }`}
             >
               <LayoutGrid className="h-5 w-5" />
@@ -593,7 +593,7 @@ export default function TestTakingPage() {
             <div className="rounded-xl border border-[#DCEAF3] bg-white p-5 shadow-xs sm:p-6">
               <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-[#EAF6FD] pb-3.5">
                 <div className="flex flex-wrap items-center gap-2.5">
-                  <h2 className="text-xl font-black uppercase tracking-tight text-[#1E4E79] sm:text-2xl">
+                  <h2 className="text-xl font-black uppercase tracking-tight text-[#2878B8] sm:text-2xl">
                     {currentPart.title}
                   </h2>
 

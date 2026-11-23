@@ -15,7 +15,7 @@ export default function CourseHero({ course, onConsultClick }: CourseHeroProps) 
   const showBgImage = Boolean(heroBg) && failedSrc !== heroBg
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-r from-[#172585] via-[#2039EE] to-[#2878B8] py-14 text-white sm:py-20">
+    <section className="relative overflow-hidden bg-gradient-to-r from-[#2878B8] to-[#75BDEB] py-14 text-white sm:py-20">
       {showBgImage && (
         <img
           src={heroBg}
@@ -32,7 +32,7 @@ export default function CourseHero({ course, onConsultClick }: CourseHeroProps) 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <Link
           to="/courses"
-          className="mb-6 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-cyan-200 transition hover:text-white"
+          className="mb-6 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-white/90 transition hover:text-white"
         >
           <ArrowLeft className="h-4 w-4" /> Danh sách khóa học
         </Link>
@@ -40,7 +40,7 @@ export default function CourseHero({ course, onConsultClick }: CourseHeroProps) 
         <div className="mx-auto max-w-4xl text-center">
           <div className="mb-4 flex flex-wrap items-center justify-center gap-2.5">
             {course.targetScore && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-4 py-1.5 text-xs font-extrabold uppercase tracking-wider text-cyan-200 backdrop-blur-sm">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-4 py-1.5 text-xs font-extrabold uppercase tracking-wider text-white backdrop-blur-sm">
                 <Target className="h-3.5 w-3.5" />
                 Mục tiêu: {course.targetScore}
               </span>

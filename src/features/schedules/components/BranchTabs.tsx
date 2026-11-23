@@ -26,7 +26,7 @@ export default function BranchTabs({ branches, selectedBranchId, onSelectBranch 
               className={`shrink-0 rounded-lg px-4 py-2.5 text-sm transition-colors duration-150 sm:px-5 ${
                 isActive
                   ? 'bg-[#FF851B] font-bold text-white shadow-sm'
-                  : 'bg-white font-semibold text-[#222222] hover:bg-[#EEF2FF] hover:text-[#293CF5]'
+                  : 'bg-white font-semibold text-[#222222] hover:bg-[#EAF6FD] hover:text-[#2878B8]'
               }`}
             >
               {branch.shortLabel}
@@ -35,7 +35,7 @@ export default function BranchTabs({ branches, selectedBranchId, onSelectBranch 
         })}
       </div>
       {/* Thanh viền xanh dương dưới hàng Tab giống thiết kế tham khảo */}
-      <div className="h-[3px] w-full rounded-full bg-[#293CF5]" />
+      <div className="h-[3px] w-full rounded-full bg-[#75BDEB]" />
     </div>
   )
 }

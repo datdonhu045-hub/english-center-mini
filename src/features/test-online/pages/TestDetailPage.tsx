@@ -200,7 +200,7 @@ export default function TestDetailPage() {
           <div>
             {/* Hàng tiêu đề trên cùng: Tên đề bên trái - Lưu ý trình duyệt bên phải giống ảnh 4 */}
             <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-              <h1 className="text-2xl font-black uppercase tracking-tight text-[#1E4E79] sm:text-3xl">
+              <h1 className="text-2xl font-black uppercase tracking-tight text-[#2878B8] sm:text-3xl">
                 {test.title}
               </h1>
               <p className="text-xs italic text-[#4A5568] sm:text-sm">

@@ -133,7 +133,7 @@ export default function ConsultationModal({
   const branchOptions = branches.map((b) => b.name)
 
   const inputClass =
-    'w-full rounded-lg border border-[#E5E7EB] bg-white px-3.5 py-2.5 text-sm text-[#222222] outline-none transition focus:border-[#293CF5] focus:ring-2 focus:ring-[#293CF5]/15'
+    'w-full rounded-lg border border-[#DCEAF3] bg-white px-3.5 py-2.5 text-sm text-[#222222] outline-none transition focus:border-[#75BDEB] focus:ring-2 focus:ring-[#75BDEB]/25'
 
   return (
     <div
@@ -147,7 +147,7 @@ export default function ConsultationModal({
     >
       <div className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white shadow-2xl">
         {/* Header Modal */}
-        <div className="flex items-center justify-between bg-[#293CF5] px-6 py-4 text-white">
+        <div className="flex items-center justify-between bg-[#75BDEB] px-6 py-4 text-white">
           <div>
             <h2 id="schedule-consult-title" className="text-base font-extrabold uppercase tracking-wide sm:text-lg">
               ĐĂNG KÝ NHẬN TƯ VẤN
@@ -242,7 +242,7 @@ export default function ConsultationModal({
                 id="consult-course"
                 value={values.courseName}
                 onChange={(e) => updateField('courseName', e.target.value)}
-                className={`${inputClass} bg-[#EEF2FF]/50 font-semibold text-[#293CF5]`}
+                className={`${inputClass} bg-[#EAF6FD]/60 font-semibold text-[#2878B8]`}
               >
                 {!courseOptions.includes(values.courseName) && values.courseName && (
                   <option value={values.courseName}>{values.courseName}</option>
@@ -264,7 +264,7 @@ export default function ConsultationModal({
                 id="consult-branch"
                 value={values.branchName}
                 onChange={(e) => updateField('branchName', e.target.value)}
-                className={`${inputClass} bg-[#EEF2FF]/50 font-semibold text-[#293CF5]`}
+                className={`${inputClass} bg-[#EAF6FD]/60 font-semibold text-[#2878B8]`}
               >
                 {!branchOptions.includes(values.branchName) && values.branchName && (
                   <option value={values.branchName}>{values.branchName}</option>

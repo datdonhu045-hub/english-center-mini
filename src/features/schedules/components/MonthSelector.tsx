@@ -28,7 +28,7 @@ export default function MonthSelector({ selectedMonth, onSelectMonth }: MonthSel
                   <span className="-rotate-45">{month}</span>
                 </span>
               ) : (
-                <span className="flex h-8 w-8 items-center justify-center rounded border border-[#E5E7EB] bg-white text-xs font-semibold text-[#222222] transition-colors group-hover:border-[#293CF5] group-hover:bg-[#EEF2FF] group-hover:text-[#293CF5]">
+                <span className="flex h-8 w-8 items-center justify-center rounded border border-[#E5E7EB] bg-white text-xs font-semibold text-[#222222] transition-colors group-hover:border-[#75BDEB] group-hover:bg-[#EAF6FD] group-hover:text-[#2878B8]">
                   {month}
                 </span>
               )}

@@ -60,7 +60,7 @@ export default function ArticleCategoryPageView({
       {/* Breadcrumb nhẹ phía trên Banner giống giao diện mẫu */}
       <div className="border-b border-[#DCEAF3] bg-white py-2 text-xs text-[#718096]">
         <div className="mx-auto flex max-w-7xl items-center gap-1.5 px-4 sm:px-6 lg:px-8">
-          <Link to="/" className="hover:text-[#2939F5] hover:underline">
+          <Link to="/" className="hover:text-[#2878B8] hover:underline">
             Trang chủ
           </Link>
           <span>»</span>

@@ -98,7 +98,7 @@ export default function CourseCard({ course, onConsultClick }: CourseCardProps) 
         <div className="mt-auto flex flex-col gap-2.5 pt-6 sm:flex-row">
           <Link
             to={detailPath}
-            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#1E40AF] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#1e3a8a]"
+            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#2878B8] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#1f5f94]"
           >
             Xem chi tiết <ChevronRight className="h-4 w-4" />
           </Link>

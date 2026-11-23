@@ -71,8 +71,8 @@ export default function SchedulePage() {
           </h2>
 
           {activeBranch && (
-            <div className="inline-flex items-center gap-2 self-start rounded-full border border-blue-200 bg-[#EEF2FF] px-3.5 py-1 text-xs font-semibold text-[#293CF5] sm:self-auto">
-              <span className="h-2 w-2 rounded-full bg-[#293CF5]" />
+            <div className="inline-flex items-center gap-2 self-start rounded-full border border-[#A7D8F5] bg-[#EAF6FD] px-3.5 py-1 text-xs font-semibold text-[#2878B8] sm:self-auto">
+              <span className="h-2 w-2 rounded-full bg-[#75BDEB]" />
               <span>
                 {activeBranch.shortLabel} • Tháng {selectedMonth}
               </span>

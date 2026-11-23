@@ -29,7 +29,7 @@ export default function FilterBar({ keyword, onKeywordChange, placeholder, selec
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-2.5 rounded-xl bg-[#2878B8] p-3 shadow-md md:flex-row">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-2.5 rounded-xl bg-[#75BDEB] p-3 shadow-md md:flex-row">
       <div className="relative flex-1">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#718096]" />
         <input

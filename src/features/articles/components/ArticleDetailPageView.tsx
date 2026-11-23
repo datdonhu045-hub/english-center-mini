@@ -49,7 +49,7 @@ export default function ArticleDetailPageView({
       <div className="mx-auto max-w-7xl px-4 pt-8 sm:px-6 lg:px-8">
         <Link
           to={backPath}
-          className="mb-5 inline-flex items-center gap-1.5 text-sm font-bold text-[#2878B8] hover:text-[#2939F5] hover:underline"
+          className="mb-5 inline-flex items-center gap-1.5 text-sm font-bold text-[#2878B8] hover:underline"
         >
           <ArrowLeft className="h-4 w-4" /> {backLabel}
         </Link>
@@ -69,7 +69,7 @@ export default function ArticleDetailPageView({
                 action={
                   <Link
                     to={backPath}
-                    className="mt-3 rounded-md bg-[#2939F5] px-5 py-2 text-sm font-bold text-white transition hover:bg-[#202DB5]"
+                    className="mt-3 rounded-md bg-[#2878B8] px-5 py-2 text-sm font-bold text-white transition hover:bg-[#1f5f94]"
                   >
                     {backLabel}
                   </Link>
@@ -86,7 +86,7 @@ export default function ArticleDetailPageView({
                       {formatDate(article.publishedDate)}
                     </span>
                     <span>•</span>
-                    <span className="font-bold text-[#2939F5]">
+                    <span className="font-bold text-[#2878B8]">
                       {article.subCategoryTag || ARTICLE_CATEGORY_LABELS[article.category]}
                     </span>
                     {article.author && (

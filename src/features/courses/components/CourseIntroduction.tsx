@@ -64,7 +64,7 @@ export default function CourseIntroduction({
               <ul className="mt-6 space-y-4 text-[15px] leading-relaxed text-[#374151] sm:text-base">
                 {introduction.bullets?.map((bullet) => (
                   <li key={bullet.id} className="flex items-start gap-3">
-                    <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-[#1E40AF]" />
+                    <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-[#2878B8]" />
                     <span>
                       {bullet.lead && <strong className="font-bold text-[#222222]">{bullet.lead} </strong>}
                       {bullet.text}
@@ -79,7 +79,7 @@ export default function CourseIntroduction({
           {images.length > 0 && (
             <div className="lg:col-span-6">
               {images.length === 1 ? (
-                <figure className="overflow-hidden rounded-2xl border-4 border-[#1E40AF]/15 bg-white shadow-xl">
+                <figure className="overflow-hidden rounded-2xl border-4 border-[#DCEAF3] bg-white shadow-xl">
                   <ImageBox
                     src={images[0].src}
                     alt={images[0].alt}
