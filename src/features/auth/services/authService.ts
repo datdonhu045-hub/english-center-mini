@@ -155,7 +155,7 @@ export const authService = {
           identifier === 'hocvien01' || identifier === baseStudent.email
             ? baseStudent.fullName
             : displayUsername,
-        email: isEmail ? identifier : `${displayUsername}@student.hmctoeic.edu.vn`,
+        email: isEmail ? identifier : `${displayUsername}@student.englishcenter.edu.vn`,
         role: 'student',
       }
     }

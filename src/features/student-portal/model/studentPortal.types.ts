@@ -1,5 +1,5 @@
 /**
- * Domain Models & DTOs cho HMC TOEIC Student Portal
+ * Domain Models & DTOs cho English Center Student Portal
  * Thiết kế theo quan hệ thực thể:
  * Student -> Enrollment -> Class -> Course
  * Class -> LearningPlan -> Lesson -> LearningResource / Assignment -> AssignmentSubmission

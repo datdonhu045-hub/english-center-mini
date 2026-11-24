@@ -24,9 +24,14 @@ export default function CareerDetailPage() {
   const { id = '' } = useParams()
   const { data: job, loading, error, retry } = useCareerDetail(id)
 
-  const applyHref = job
-    ? `mailto:${centerInfo.email}?subject=${encodeURIComponent(`Ứng tuyển: ${job.title}`)}`
-    : '#'
+  const todayIso = new Date().toISOString().slice(0, 10)
+  const isJobClosed = Boolean(
+    job && (job.status === 'closed' || (job.deadline && job.deadline < todayIso)),
+  )
+  const applyHref =
+    job && !isJobClosed
+      ? `mailto:${centerInfo.email}?subject=${encodeURIComponent(`Ứng tuyển: ${job.title}`)}`
+      : '#'
 
   return (
     <div className="ec-font bg-[#F5FAFE] pb-14">
@@ -57,6 +62,11 @@ export default function CareerDetailPage() {
             <div className="flex flex-wrap gap-2 text-xs font-bold">
               <span className="rounded-full bg-[#EAF6FD] px-2.5 py-1 text-[#2878B8]">{job.type}</span>
               <span className="rounded-full bg-[#FFF1E8] px-2.5 py-1 text-[#F26522]">{job.position}</span>
+              {isJobClosed && (
+                <span className="rounded-full bg-slate-200 px-2.5 py-1 text-slate-700">
+                  Đã đóng nhận hồ sơ
+                </span>
+              )}
             </div>
             <h1 className="mt-3 text-2xl font-extrabold leading-snug text-[#243B53] sm:text-3xl">{job.title}</h1>
 
@@ -78,12 +88,18 @@ export default function CareerDetailPage() {
             <Section title="Quyền lợi" items={job.benefits} />
 
             <div className="mt-8 flex justify-center">
-              <a
-                href={applyHref}
-                className="inline-flex items-center gap-2 rounded-lg bg-[#F26522] px-8 py-3 text-sm font-extrabold uppercase tracking-wider text-white shadow-md transition hover:-translate-y-0.5 hover:bg-[#d95314]"
-              >
-                <Mail className="h-4 w-4" /> Ứng tuyển ngay
-              </a>
+              {isJobClosed ? (
+                <span className="inline-flex cursor-not-allowed items-center gap-2 rounded-lg border border-slate-200 bg-slate-100 px-8 py-3 text-sm font-bold uppercase tracking-wider text-slate-500">
+                  Đã ngừng nhận hồ sơ ứng tuyển
+                </span>
+              ) : (
+                <a
+                  href={applyHref}
+                  className="inline-flex items-center gap-2 rounded-lg bg-[#F26522] px-8 py-3 text-sm font-extrabold uppercase tracking-wider text-white shadow-md transition hover:-translate-y-0.5 hover:bg-[#d95314]"
+                >
+                  <Mail className="h-4 w-4" /> Ứng tuyển ngay
+                </a>
+              )}
             </div>
           </article>
         )}

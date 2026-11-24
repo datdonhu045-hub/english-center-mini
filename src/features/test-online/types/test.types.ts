@@ -45,19 +45,33 @@ export type TestContentBlock =
 export interface TestOption {
   id: string
   label: 'A' | 'B' | 'C' | 'D'
-  content: TestContentBlock[]
+  /** Nội dung chữ của phương án (để trống nếu là phương án chỉ nghe như Part 1, Part 2) */
+  text?: string
+  imageUrl?: string
+  content?: TestContentBlock[]
 }
 
 /**
- * Dữ liệu câu hỏi gửi xuống Frontend khi học viên ĐANG THI.
- * Tuyệt đối KHÔNG chứa đáp án đúng (correctOptionId) hay giải thích (explanation).
+ * Dữ liệu câu hỏi đồng nhất cho mọi Part (Part 1 – Part 7):
+ * - Mỗi câu đều hỗ trợ sẵn 3 trường đơn giản: `questionText` (câu hỏi), `audioUrl` (âm thanh), `imageUrl` (ảnh).
+ * - Câu nào không có thành phần nào (khuyết chữ, khuyết ảnh hoặc khuyết âm thanh) chỉ cần để trống `""` hoặc `undefined`, giao diện vẫn giữ nguyên khung chuẩn.
+ * - Tuyệt đối KHÔNG chứa đáp án đúng (`correctOptionId`) hay giải thích (`explanation`) khi đang thi.
  */
 export interface TestQuestion {
   id: string
   questionNumber: number
   partNumber: ToeicPartNumber
   groupId: string
-  content: TestContentBlock[]
+  /** Nội dung câu hỏi (để trống nếu câu không có chữ câu hỏi như Part 1, Part 2) */
+  questionText?: string
+  /** Đường dẫn file âm thanh của câu hỏi (để trống nếu không có âm thanh) */
+  audioUrl?: string
+  audioDurationSeconds?: number
+  /** Đường dẫn hình ảnh của câu hỏi (để trống nếu không có ảnh) */
+  imageUrl?: string
+  imageAlt?: string
+  /** Tương thích mở rộng nếu dữ liệu truyền theo mảng block */
+  content?: TestContentBlock[]
   options: TestOption[]
   displayOrder: number
 }
@@ -85,7 +99,18 @@ export interface QuestionGroup {
   groupTitle?: string
   /** ID định danh nguồn phát Audio dùng chung (quản lý quy tắc chỉ nghe 1 lần theo nhóm) */
   audioGroupId?: string
-  stimulus: TestContentBlock[]
+  /** Đoạn văn đọc / hội thoại / bảng biểu dùng chung cho nhóm câu hỏi (có thể để trống) */
+  passageText?: string
+  /** Mảng nhiều đoạn văn dùng chung (VD: Double / Triple Passage ở Part 7) */
+  passages?: string[]
+  /** Đường dẫn âm thanh dùng chung cho nhóm câu hỏi (có thể để trống) */
+  audioUrl?: string
+  audioDurationSeconds?: number
+  /** Đường dẫn hình ảnh dùng chung cho nhóm câu hỏi (có thể để trống) */
+  imageUrl?: string
+  imageAlt?: string
+  /** Tương thích mở rộng nếu dữ liệu truyền theo mảng block */
+  stimulus?: TestContentBlock[]
   questions: TestQuestion[]
   displayOrder: number
 }

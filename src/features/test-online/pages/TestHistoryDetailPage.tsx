@@ -82,33 +82,18 @@ export default function TestHistoryDetailPage() {
   }
 
   return (
-    <div className="ec-reading-font min-h-screen bg-[#F5FAFE] pb-24">
-      {/* Breadcrumb */}
-      <div className="border-b border-[#DCEAF3] bg-white py-2 text-xs text-[#718096]">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 lg:px-6">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <Link to="/" className="hover:text-[#2878B8] hover:underline">
-              Trang chủ
-            </Link>
-            <span>»</span>
-            <Link to="/test-history" className="hover:text-[#2878B8] hover:underline">
-              Lịch sử làm bài
-            </Link>
-            <span>»</span>
-            <span className="font-bold text-[#243B53]">Chi tiết lượt thi</span>
-          </div>
-
+    <div className="ec-reading-font min-h-screen bg-white pb-24">
+      <div className="mx-auto max-w-6xl px-4 pt-7 lg:px-6">
+        {/* Liên kết <- Lịch sử làm bài sạch sẽ giống ảnh mẫu 9 */}
+        <div className="mb-4">
           <Link
             to="/test-history"
-            className="inline-flex items-center gap-1 font-extrabold text-[#2878B8] hover:underline"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-[#243B53] hover:text-[#2878B8]"
           >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            <span>Quay lại lịch sử</span>
+            <ArrowLeft className="h-4 w-4" />
+            <span>Lịch sử làm bài</span>
           </Link>
         </div>
-      </div>
-
-      <div className="mx-auto max-w-6xl px-4 pt-7 lg:px-6">
         {loading && <LoadingBlock label="Đang tải chi tiết lượt thi..." />}
 
         {!loading && error && <ErrorBlock message={error} onRetry={retry} />}
@@ -182,36 +167,31 @@ export default function TestHistoryDetailPage() {
                           Math.min(flatSingleQuestions.length - 1, i + 1),
                         )
                       }
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-[#2878B8] px-4 py-2 text-xs font-extrabold uppercase text-white transition hover:bg-[#1e639c] disabled:opacity-40"
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-[#75BDEB] px-4 py-2 text-xs font-extrabold uppercase text-white transition hover:bg-[#5aaee3] disabled:opacity-40"
                     >
-                      <span>CÂU TIẾP</span>
+                      <span>CÂU TIẾP THEO</span>
                       <ArrowRight className="h-3.5 w-3.5" />
                     </button>
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-[#DCEAF3] bg-white p-5 shadow-2xs sm:p-6">
-                  <TestQuestionRenderer
-                    part={currentQuestionItem.part}
-                    group={currentQuestionItem.group}
-                    activeQuestionId={currentQuestionItem.question.id}
-                    singleQuestionId={currentQuestionItem.question.id}
-                    answers={attempt.answers}
-                    flaggedQuestionIds={attempt.flaggedQuestionIds}
-                    mode="review"
-                    reviewsMap={result.reviews}
-                    onSelectAnswer={() => {}}
-                    onToggleFlag={() => {}}
-                  />
-                </div>
+                <TestQuestionRenderer
+                  part={currentQuestionItem.part}
+                  group={currentQuestionItem.group}
+                  activeQuestionId={currentQuestionItem.question.id}
+                  singleQuestionId={currentQuestionItem.question.id}
+                  answers={attempt.answers}
+                  flaggedQuestionIds={attempt.flaggedQuestionIds}
+                  mode="review"
+                  reviewsMap={result.reviews}
+                  onSelectAnswer={() => {}}
+                  onToggleFlag={() => {}}
+                />
               </div>
             ) : (
-              <div className="flex flex-col gap-5">
+              <div className="flex flex-col gap-6">
                 {flatGroups.map(({ part, group }) => (
-                  <div
-                    key={group.id}
-                    className="rounded-xl border border-[#DCEAF3] bg-white p-5 shadow-2xs sm:p-6"
-                  >
+                  <div key={group.id}>
                     <TestQuestionRenderer
                       part={part}
                       group={group}
@@ -230,48 +210,51 @@ export default function TestHistoryDetailPage() {
             <button
               type="button"
               onClick={() => setNavDrawerOpen((v) => !v)}
-              className="fixed bottom-6 right-6 z-40 inline-flex items-center gap-2.5 rounded-full bg-[#2878B8] px-5 py-3 text-xs font-black uppercase tracking-wide text-white shadow-xl transition hover:bg-[#1e639c]"
+              className="fixed bottom-6 right-6 z-40 inline-flex items-center gap-2.5 rounded-full bg-[#75BDEB] px-5 py-3 text-xs font-black uppercase tracking-wide text-white shadow-xl transition hover:bg-[#5aaee3]"
             >
               <LayoutGrid className="h-4 w-4" />
               <span>DANH SÁCH CÂU</span>
-              <span className="rounded-full bg-white/20 px-2 py-0.5 text-[11px]">
+              <span className="rounded-full bg-white/25 px-2 py-0.5 text-[11px]">
                 {result.totalQuestions}
               </span>
             </button>
 
             {navDrawerOpen && (
               <div
-                className="fixed inset-0 z-40 bg-slate-900/25 backdrop-blur-[1px]"
+                className="fixed inset-0 z-40 bg-slate-900/25"
                 onClick={(e) => {
                   if (e.target === e.currentTarget) setNavDrawerOpen(false)
                 }}
               >
-                <div className="fixed bottom-20 right-6 z-50 w-[calc(100vw-2rem)] max-w-sm">
-                  <div className="relative">
+                <aside className="fixed bottom-0 left-0 top-0 z-50 w-[280px] overflow-y-auto border-r border-[#DCEAF3] bg-[#F4F5F7] p-4 shadow-2xl sm:w-[300px]">
+                  <div className="mb-3 flex items-center justify-between border-b border-[#DCEAF3] pb-2.5">
+                    <span className="text-xs font-extrabold uppercase tracking-wider text-[#243B53]">
+                      Danh sách câu hỏi ({result.totalQuestions})
+                    </span>
                     <button
                       type="button"
                       onClick={() => setNavDrawerOpen(false)}
                       aria-label="Đóng bảng câu hỏi"
-                      className="absolute right-3 top-3 z-10 flex h-7 w-7 items-center justify-center rounded-lg bg-[#F5FAFE] text-[#718096] transition hover:bg-[#EAF6FD] hover:text-[#243B53]"
+                      className="flex h-7 w-7 items-center justify-center rounded-lg text-[#718096] transition hover:bg-[#EAF6FD] hover:text-[#243B53]"
                     >
                       <X className="h-4 w-4" />
                     </button>
-
-                    <QuestionNavigator
-                      activeParts={activeParts}
-                      currentPartNumber={
-                        currentQuestionItem?.part.partNumber ?? activeParts[0]?.partNumber ?? 1
-                      }
-                      activeQuestionId={currentQuestionItem?.question.id}
-                      answers={attempt.answers}
-                      flaggedQuestionIds={attempt.flaggedQuestionIds}
-                      listeningCompleted
-                      mode="review"
-                      reviewsMap={result.reviews}
-                      onJumpToQuestion={handleJumpToQuestion}
-                    />
                   </div>
-                </div>
+
+                  <QuestionNavigator
+                    activeParts={activeParts}
+                    currentPartNumber={
+                      currentQuestionItem?.part.partNumber ?? activeParts[0]?.partNumber ?? 1
+                    }
+                    activeQuestionId={currentQuestionItem?.question.id}
+                    answers={attempt.answers}
+                    flaggedQuestionIds={attempt.flaggedQuestionIds}
+                    listeningCompleted
+                    mode="review"
+                    reviewsMap={result.reviews}
+                    onJumpToQuestion={handleJumpToQuestion}
+                  />
+                </aside>
               </div>
             )}
           </div>

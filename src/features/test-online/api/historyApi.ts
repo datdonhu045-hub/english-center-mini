@@ -48,9 +48,6 @@ export const historyApi = {
     const chronological = Object.values(attemptsMap)
       .filter((att) => {
         const ownerId = att.studentId ?? 'stu-001'
-        if (currentUserId === 'guest') {
-          return ownerId === 'guest' || ownerId === 'stu-001'
-        }
         return ownerId === currentUserId
       })
       .sort(
@@ -116,7 +113,9 @@ export const historyApi = {
     }
     await mockDelay(100)
     const attempt = attemptStorageService.getAttemptById(attemptId)
-    if (!attempt) return null
+    const currentUserId = authSessionStore.getCurrentUser()?.id ?? 'guest'
+    const ownerId = attempt?.studentId ?? 'stu-001'
+    if (!attempt || ownerId !== currentUserId) return null
 
     const test = mockTests.find((t) => t.id === attempt.testId || t.slug === attempt.testSlug)
     if (!test) return null

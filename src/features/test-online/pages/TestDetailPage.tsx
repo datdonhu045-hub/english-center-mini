@@ -1,10 +1,13 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { AlertCircle, ArrowLeft, CheckSquare, Play, Square, Volume2 } from 'lucide-react'
+import { AlertCircle, ArrowLeft, CheckSquare, LayoutGrid, Square } from 'lucide-react'
 import { EmptyBlock, ErrorBlock, LoadingBlock } from '@/components/ui/StateViews'
+import { centerInfo } from '@/config/center-info'
+import { useAuth } from '@/features/auth/hooks/useAuth'
 import { useTestDetailBySlug } from '@/features/test-online/hooks/useTests'
 import { attemptApi } from '@/features/test-online/api/attemptApi'
 import type {
+  TestAttempt,
   TestPart,
   TestPracticeMode,
   ToeicPartNumber,
@@ -13,6 +16,7 @@ import type {
 export default function TestDetailPage() {
   const { slug = '' } = useParams<{ slug: string }>()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const { data: test, loading, error, retry } = useTestDetailBySlug(slug)
 
   const [practiceMode, setPracticeMode] = useState<TestPracticeMode>('full')
@@ -20,7 +24,27 @@ export default function TestDetailPage() {
   const [userDurationOverride, setUserDurationOverride] = useState<number | null>(null)
   const [starting, setStarting] = useState(false)
   const [startError, setStartError] = useState<string | null>(null)
-  const [testingSpeaker, setTestingSpeaker] = useState(false)
+
+  // Trạng thái lượt thi đang làm dở (hiện modal THÔNG BÁO giống ảnh mẫu 4)
+  const [resumeAttempt, setResumeAttempt] = useState<TestAttempt | null>(null)
+
+  useEffect(() => {
+    if (!slug) return
+    let active = true
+    attemptApi
+      .findInProgressAttemptByTestSlug(slug, user?.id)
+      .then((found) => {
+        if (active) {
+          setResumeAttempt(found)
+        }
+      })
+      .catch(() => {
+        // ignore
+      })
+    return () => {
+      active = false
+    }
+  }, [slug, user?.id])
 
   const selectedParts = useMemo<ToeicPartNumber[]>(() => {
     if (!test) return []
@@ -47,9 +71,8 @@ export default function TestDetailPage() {
   const handleTogglePart = (partNumber: ToeicPartNumber) => {
     if (!test) return
     const partObj = test.parts.find((p) => p.partNumber === partNumber)
-    if (!partObj) return
+    if (!partObj || !partObj.allowStandaloneSelection) return
 
-    // Nếu đang ở Full Test mà người dùng bấm vào 1 dòng Part, tự động bật chế độ "Chọn từng part"
     const current =
       practiceMode === 'full' || customSelectedParts === null
         ? test.parts.map((p) => p.partNumber)
@@ -62,20 +85,6 @@ export default function TestDetailPage() {
     const exists = current.includes(partNumber)
     const next = exists ? current.filter((p) => p !== partNumber) : [...current, partNumber]
     setCustomSelectedParts(next.sort((a, b) => a - b) as ToeicPartNumber[])
-  }
-
-  const handleSpeakerTest = () => {
-    if (!test) return
-    setTestingSpeaker(true)
-    const audio = new Audio(test.sampleCheckAudioUrl)
-    void audio
-      .play()
-      .then(() => {
-        audio.onended = () => setTestingSpeaker(false)
-      })
-      .catch(() => {
-        setTestingSpeaker(false)
-      })
   }
 
   const handleStartExam = async () => {
@@ -99,6 +108,17 @@ export default function TestDetailPage() {
     }
   }
 
+  const handleContinueResumeAttempt = () => {
+    if (!resumeAttempt) return
+    navigate(`/test-online/attempt/${resumeAttempt.id}`)
+  }
+
+  const handleDiscardResumeAttempt = async () => {
+    if (!resumeAttempt) return
+    await attemptApi.discardInProgressAttempt(resumeAttempt.id)
+    setResumeAttempt(null)
+  }
+
   const listeningParts = useMemo(
     () => (test ? test.parts.filter((p) => p.section === 'listening') : []),
     [test],
@@ -113,78 +133,78 @@ export default function TestDetailPage() {
   const renderPartRow = (part: TestPart, rowIndex: number) => {
     const isChecked = selectedSet.has(part.partNumber)
     const isCustom = practiceMode === 'custom_parts'
+    const canToggleThisPart = isCustom && part.allowStandaloneSelection
 
     return (
       <div
         key={part.id}
         onClick={() => {
-          if (isCustom) {
+          if (canToggleThisPart) {
             handleTogglePart(part.partNumber)
           }
         }}
-        className={`grid grid-cols-[48px_minmax(0,1fr)_140px] items-center border-b border-[#F2D5B8] last:border-b-0 sm:grid-cols-[56px_minmax(0,1fr)_200px] ${
-          isCustom ? 'cursor-pointer' : ''
+        className={`grid grid-cols-[44px_minmax(0,1fr)_96px] items-center border-b border-[#F2D5B8] last:border-b-0 sm:grid-cols-[52px_minmax(0,1fr)_220px] ${
+          canToggleThisPart ? 'cursor-pointer' : ''
         } ${isChecked ? 'bg-white' : 'bg-slate-50/70 opacity-60'}`}
       >
-        {/* Ô số thứ tự bên trái màu cam nhạt giống hệt ảnh mẫu 4 */}
-        <div className="flex h-full items-center justify-center border-r border-[#F2D5B8] bg-[#F7D7B5] py-3 text-sm font-black text-[#243B53]">
+        <div className="flex h-full items-center justify-center border-r border-[#F2D5B8] bg-[#F5D3B0] py-3 text-sm font-black text-[#243B53]">
           {rowIndex + 1}
         </div>
 
-        {/* Tên PART */}
-        <div className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-[#243B53]">
+        <div className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-[#4A5568]">
           {isCustom && (
-            <span className="text-[#2878B8]">
+            <span className="text-[#75BDEB]">
               {isChecked ? (
-                <CheckSquare className="h-4 w-4 text-[#2878B8]" />
+                <CheckSquare className="h-4 w-4 text-[#75BDEB]" />
               ) : (
                 <Square className="h-4 w-4 text-[#718096]" />
               )}
             </span>
           )}
-          <span className="font-semibold text-[#4A5568]">{part.title}</span>
-          <span className="hidden text-xs text-[#718096] sm:inline">
-            ({part.englishTitle})
-          </span>
+          <span>{part.title}</span>
         </div>
 
-        {/* Số câu hỏi */}
         <div className="border-l border-[#F2D5B8] px-4 py-3 text-sm font-medium text-[#4A5568]">
-          {part.standardToeicCount} CÂU{' '}
-          <span className="text-xs text-[#718096]">({part.questionCount} câu đề)</span>
+          {part.standardToeicCount} CÂU
         </div>
       </div>
     )
   }
 
   return (
-    <div className="ec-reading-font min-h-screen bg-[#F5FAFE] pb-16">
-      {/* Breadcrumb */}
-      <div className="border-b border-[#DCEAF3] bg-white py-2 text-xs text-[#718096]">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 lg:px-6">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <Link to="/" className="hover:text-[#2878B8] hover:underline">
-              Trang chủ
+    <div className="ec-reading-font min-h-screen bg-[#F0F2F5] pb-16">
+      {/* Thanh Topbar HỆ THỐNG THI TRỰC TUYẾN màu xanh dương nhạt (#75BDEB) giống ảnh mẫu 4 */}
+      <header className="sticky top-0 z-30 border-b border-[#DCEAF3] bg-[#75BDEB] text-white shadow-xs">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 lg:px-8">
+          <div className="flex items-center gap-3">
+            <Link
+              to="/test-online"
+              title="Quay lại danh sách đề thi"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/40 bg-white/15 text-white transition hover:bg-white/25"
+            >
+              <ArrowLeft className="h-4 w-4" />
             </Link>
-            <span>»</span>
-            <Link to="/test-online" className="hover:text-[#2878B8] hover:underline">
-              Test Online
-            </Link>
-            <span>»</span>
-            <span className="font-bold text-[#243B53]">{test?.title ?? slug}</span>
+            <span className="text-base font-medium uppercase tracking-wide text-white ec-shadow-text sm:text-lg">
+              HỆ THỐNG THI TRỰC TUYẾN
+            </span>
           </div>
 
-          <Link
-            to="/test-online"
-            className="inline-flex items-center gap-1 font-extrabold text-[#2878B8] hover:underline"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            <span>Danh sách đề</span>
-          </Link>
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-bold text-white ec-shadow-text">
+              {user?.fullName ?? 'Học viên'}
+            </span>
+            <Link
+              to="/test-history"
+              title="Xem lịch sử làm bài"
+              className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/25 text-white transition hover:bg-white/35"
+            >
+              <LayoutGrid className="h-5 w-5" />
+            </Link>
+          </div>
         </div>
-      </div>
+      </header>
 
-      <div className="mx-auto max-w-6xl px-4 pt-8 lg:px-6">
+      <div className="mx-auto max-w-6xl px-4 pt-6 lg:px-6">
         {loading && <LoadingBlock label="Đang tải cấu trúc đề thi..." />}
 
         {!loading && error && <ErrorBlock message={error} onRetry={retry} />}
@@ -197,10 +217,10 @@ export default function TestDetailPage() {
         )}
 
         {!loading && !error && test && (
-          <div>
-            {/* Hàng tiêu đề trên cùng: Tên đề bên trái - Lưu ý trình duyệt bên phải giống ảnh 4 */}
+          <div className="rounded-lg border border-[#DCEAF3] bg-[#F8F9FA] p-4 shadow-2xs sm:p-6">
+            {/* Hàng tiêu đề trên cùng giống ảnh 4 */}
             <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-              <h1 className="text-2xl font-black uppercase tracking-tight text-[#2878B8] sm:text-3xl">
+              <h1 className="text-xl font-extrabold uppercase tracking-tight text-[#2878B8] sm:text-2xl">
                 {test.title}
               </h1>
               <p className="text-xs italic text-[#4A5568] sm:text-sm">
@@ -208,13 +228,13 @@ export default function TestDetailPage() {
               </p>
             </div>
 
-            {/* Khung trắng chính giống hệt ảnh 4 */}
-            <div className="rounded-xl border border-[#DCEAF3] bg-white p-6 shadow-xs sm:p-10">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="text-sm text-[#4A5568] sm:text-base">
+            {/* Khung trắng chính bên trong giống hệt ảnh 4 */}
+            <div className="rounded-md bg-white p-6 shadow-2xs sm:p-9">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="text-sm text-[#4A5568] sm:text-[15px]">
                   <p>
                     Thời gian làm bài thi:{' '}
-                    <strong className="font-extrabold text-[#243B53]">
+                    <strong className="font-bold text-[#243B53]">
                       {selectedDuration === 120
                         ? '2 giờ'
                         : `${selectedDuration} phút`}
@@ -223,73 +243,45 @@ export default function TestDetailPage() {
                   <p className="mt-1">Cấu trúc đề thi</p>
                 </div>
 
-                {/* Nút chọn thời gian nhanh & kiểm tra loa gọn nhẹ */}
-                <div className="flex flex-wrap items-center gap-2.5 text-xs">
-                  <label className="flex items-center gap-1.5 font-semibold text-[#4A5568]">
-                    <span>Thời gian:</span>
-                    <select
-                      value={selectedDuration}
-                      onChange={(e) => setUserDurationOverride(Number(e.target.value))}
-                      className="rounded-lg border border-[#DCEAF3] bg-[#F5FAFE] px-2.5 py-1.5 font-extrabold text-[#243B53] outline-none focus:border-[#75BDEB]"
-                    >
-                      {test.availableDurationOptions.map((m) => (
-                        <option key={m} value={m}>
-                          {m === 120 ? '120 phút (2 giờ)' : `${m} phút`}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <button
-                    type="button"
-                    onClick={handleSpeakerTest}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-[#75BDEB] bg-[#EAF6FD] px-3 py-1.5 font-extrabold text-[#2878B8] transition hover:bg-[#2878B8] hover:text-white"
-                  >
-                    <Volume2 className="h-3.5 w-3.5" />
-                    <span>{testingSpeaker ? 'Đang phát...' : 'Thử loa'}</span>
-                  </button>
-                </div>
+                {practiceMode === 'custom_parts' && (
+                  <div className="flex flex-wrap items-center gap-2.5 text-xs">
+                    <label className="flex items-center gap-1.5 font-semibold text-[#4A5568]">
+                      <span>Thời gian:</span>
+                      <select
+                        value={selectedDuration}
+                        onChange={(e) => setUserDurationOverride(Number(e.target.value))}
+                        className="rounded-md border border-[#DCEAF3] bg-[#F5FAFE] px-2.5 py-1.5 font-bold text-[#243B53] outline-none focus:border-[#75BDEB]"
+                      >
+                        {test.availableDurationOptions.map((m) => (
+                          <option key={m} value={m}>
+                            {m === 120 ? '120 phút (2 giờ)' : `${m} phút`}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                )}
               </div>
 
-              {/* Khối bảng Cấu trúc đề thi căn giữa giống ảnh 4 */}
-              <div className="mx-auto mt-6 max-w-2xl">
-                {/* Checkbox "Chọn từng part" */}
-                <div className="mb-5 flex items-center justify-between">
-                  <label className="inline-flex cursor-pointer select-none items-center gap-2.5 text-sm font-extrabold text-[#243B53]">
-                    <input
-                      type="checkbox"
-                      checked={practiceMode === 'custom_parts'}
-                      onChange={handleToggleCustomMode}
-                      className="h-4 w-4 accent-[#2878B8]"
-                    />
-                    <span>Chọn từng part</span>
-                  </label>
-
-                  {practiceMode === 'custom_parts' && (
-                    <div className="flex items-center gap-3 text-xs font-bold">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setCustomSelectedParts(test.parts.map((p) => p.partNumber))
-                        }
-                        className="text-[#2878B8] hover:underline"
-                      >
-                        Chọn tất cả
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setCustomSelectedParts([])}
-                        className="text-[#718096] hover:text-rose-600 hover:underline"
-                      >
-                        Bỏ chọn
-                      </button>
-                    </div>
-                  )}
-                </div>
+              {/* Khối bảng Cấu trúc đề thi căn giữa */}
+              <div className="mx-auto mt-5 max-w-xl">
+                {test.allowPartSelection && (
+                  <div className="mb-4 flex items-center justify-between">
+                    <label className="inline-flex cursor-pointer select-none items-center gap-2 text-sm font-bold text-[#243B53]">
+                      <input
+                        type="checkbox"
+                        checked={practiceMode === 'custom_parts'}
+                        onChange={handleToggleCustomMode}
+                        className="h-4 w-4 accent-[#75BDEB]"
+                      />
+                      <span>Chọn từng part</span>
+                    </label>
+                  </div>
+                )}
 
                 {/* Bảng LISTENING */}
                 <div>
-                  <h2 className="mb-2.5 text-sm font-black uppercase tracking-wide text-[#243B53]">
+                  <h2 className="mb-2 text-sm font-black uppercase tracking-wide text-[#111827]">
                     LISTENING
                   </h2>
                   <div className="overflow-hidden border border-[#F2D5B8]">
@@ -299,7 +291,7 @@ export default function TestDetailPage() {
 
                 {/* Bảng READING */}
                 <div className="mt-6">
-                  <h2 className="mb-2.5 text-sm font-black uppercase tracking-wide text-[#243B53]">
+                  <h2 className="mb-2 text-sm font-black uppercase tracking-wide text-[#111827]">
                     READING
                   </h2>
                   <div className="overflow-hidden border border-[#F2D5B8]">
@@ -320,16 +312,15 @@ export default function TestDetailPage() {
                   </div>
                 )}
 
-                {/* Nút BẮT ĐẦU LÀM BÀI */}
+                {/* Nút BẮT ĐẦU */}
                 <div className="mt-7 flex justify-center">
                   <button
                     type="button"
                     disabled={!canStart}
                     onClick={handleStartExam}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#F26522] px-10 py-3.5 text-sm font-black uppercase tracking-wide text-white shadow-sm transition hover:bg-[#d95314] disabled:cursor-not-allowed disabled:opacity-45 sm:text-base"
+                    className="inline-flex items-center justify-center rounded-lg bg-[#75BDEB] px-10 py-3 text-sm font-extrabold uppercase tracking-wide text-white shadow-sm transition hover:bg-[#5aaee3] disabled:cursor-not-allowed disabled:opacity-45 sm:text-base"
                   >
-                    <Play className="h-4 w-4 fill-current" />
-                    <span>{starting ? 'Đang mở đề...' : 'BẮT ĐẦU LÀM BÀI'}</span>
+                    {starting ? 'ĐANG MỞ ĐỀ...' : 'BẮT ĐẦU'}
                   </button>
                 </div>
               </div>
@@ -337,6 +328,58 @@ export default function TestDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Thanh hỗ trợ cố định dưới chân trang giống ảnh mẫu 4 */}
+      <div className="fixed inset-x-0 bottom-0 z-20 bg-[#E53E3E] px-4 py-1.5 text-center text-xs font-medium text-white">
+        Khi có vấn đề hoặc thắc mắc về bài test online, hãy giữ nguyên màn hình và liên hệ Hotline{' '}
+        {centerInfo.hotline} để được hỗ trợ.
+      </div>
+
+      {/* Hộp thoại THÔNG BÁO: "Bạn có muốn tiếp tục làm bài test đang thực hiện?" giống ảnh mẫu 4 (dùng màu xanh nhạt English Center) */}
+      {resumeAttempt && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="resume-test-modal-title"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/35 p-4"
+        >
+          <div className="w-full max-w-[380px] overflow-hidden rounded-lg border border-[#DCEAF3] bg-white shadow-2xl">
+            <div className="bg-[#75BDEB] px-4 py-3 text-white">
+              <h2
+                id="resume-test-modal-title"
+                className="text-sm font-bold uppercase tracking-wide"
+              >
+                THÔNG BÁO
+              </h2>
+            </div>
+
+            <div className="px-4 py-5">
+              <p className="text-sm text-[#243B53]">
+                Bạn có muốn tiếp tục làm bài test đang thực hiện?
+              </p>
+
+              <div className="mt-5 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={handleContinueResumeAttempt}
+                  className="rounded-md bg-[#75BDEB] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#5aaee3]"
+                >
+                  Tiếp tục làm bài
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void handleDiscardResumeAttempt()
+                  }}
+                  className="rounded-md bg-[#E05252] px-4 py-2 text-xs font-bold uppercase text-white transition hover:bg-[#c93f3f]"
+                >
+                  HỦY
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

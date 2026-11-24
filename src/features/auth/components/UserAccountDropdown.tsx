@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ChevronDown, GraduationCap, History, Lock, LogOut, User, UserPlus } from 'lucide-react'
+import { TEST_HISTORY_PATH } from '@/config/center-info'
 import { useAuth } from '@/features/auth/hooks/useAuth'
 import { USER_ROLE_LABELS } from '@/features/auth/types/auth.types'
 import LogoutConfirmModal from '@/features/auth/components/LogoutConfirmModal'
@@ -102,7 +103,7 @@ export default function UserAccountDropdown() {
                 <div className="my-1 h-px bg-[#DCEAF3]" />
 
                 <Link
-                  to="/student/history"
+                  to={TEST_HISTORY_PATH}
                   role="menuitem"
                   onClick={() => setMenuOpen(false)}
                   className="flex w-full items-center gap-2.5 rounded-[9px] px-3 py-2.5 text-[14px] font-medium text-[#243B53] transition hover:bg-[#EAF6FD] hover:text-[#2878B8]"
@@ -125,7 +126,7 @@ export default function UserAccountDropdown() {
 
                 {/* 1. Lịch sử bài làm */}
                 <Link
-                  to="/student/history"
+                  to={TEST_HISTORY_PATH}
                   role="menuitem"
                   onClick={() => setMenuOpen(false)}
                   className="flex w-full items-center gap-2.5 rounded-[9px] px-3 py-2.5 text-[14px] font-medium text-[#243B53] transition hover:bg-[#EAF6FD] hover:text-[#2878B8]"
@@ -134,7 +135,7 @@ export default function UserAccountDropdown() {
                   <span>Lịch sử bài làm</span>
                 </Link>
 
-                {/* 2. Khóa học của tôi (Dẫn vào Cổng học viên HMC TOEIC Student Portal) */}
+                {/* 2. Khóa học của tôi (Dẫn vào Cổng học viên English Center Student Portal) */}
                 {isStudent && (
                   <Link
                     to="/student/dashboard"

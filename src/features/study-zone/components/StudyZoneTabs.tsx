@@ -12,7 +12,7 @@ export default function StudyZoneTabs({ activeCategory }: StudyZoneTabsProps) {
     <div
       role="tablist"
       aria-label="Danh mục Study Zone"
-      className="grid grid-cols-3 overflow-hidden rounded-lg border border-[#DCEAF3] bg-white shadow-sm"
+      className="grid grid-cols-3 overflow-hidden border border-[#DCEAF3] bg-white shadow-xs"
     >
       {CATEGORIES.map((category, index) => {
         const isActive = category === activeCategory
@@ -22,12 +22,12 @@ export default function StudyZoneTabs({ activeCategory }: StudyZoneTabsProps) {
             to={STUDY_CATEGORY_PATHS[category]}
             role="tab"
             aria-selected={isActive}
-            className={`flex items-center justify-center px-3 py-3.5 text-center text-sm font-extrabold tracking-wide transition sm:py-4 sm:text-base md:text-lg ${
-              index > 0 ? 'border-l border-white/40' : ''
+            className={`flex items-center justify-center px-3 py-3.5 text-center text-sm font-bold tracking-wide transition sm:py-4 sm:text-base md:text-lg ${
+              index > 0 ? 'border-l border-white/60' : ''
             } ${
               isActive
-                ? 'bg-[#F26522] text-white shadow-inner'
-                : 'bg-[#2878B8] text-white hover:bg-[#1e639c]'
+                ? 'bg-[#F26522] text-white'
+                : 'bg-[#75BDEB] text-white hover:bg-[#5aaee3]'
             }`}
           >
             {STUDY_CATEGORY_LABELS[category]}

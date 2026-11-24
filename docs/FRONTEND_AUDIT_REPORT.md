@@ -1,76 +1,107 @@
-# BÁO CÁO KIỂM ĐỊNH TOÀN DIỆN FRONTEND – HMC TOEIC (`FRONTEND_AUDIT_REPORT.md`)
+# BÁO CÁO KIỂM TOÁN TOÀN DIỆN FRONTEND – ENGLISH CENTER
 
-**Ngày thực hiện Audit:** 22/11/2026  
-**Phạm vi kiểm định:** Toàn bộ Frontend học viên và khách truy cập (`Public Website`, `Student Portal`, `Study Zone`, `Test Online`, `Authentication & Account`).
-
----
-
-## 1. Tổng quan Dự án & Công nghệ
-
-- **Tên hệ thống:** HMC TOEIC (*"Chỉ cần cố gắng - Học là đỗ"*)
-- **Ngăn xếp công nghệ thực tế (`package.json`):**
-  - **Core:** React `19.3.1`, TypeScript `~7.0.2`, Vite `8.3.6`
-  - **Styling & Icons:** Tailwind CSS `4.3.5` (`@tailwindcss/vite`), Lucide React `1.73.0`
-  - **Routing & Server State:** React Router DOM `7.18.5`, TanStack React Query `5.108.0`
-  - **Linter:** `oxlint` `1.90.0` (116 rules, bao gồm React Compiler & React Hooks lints)
-- **Đánh giá phụ thuộc (`dependencies`):** Bộ thư viện rất gọn, không có thư viện thừa hay trùng lặp chức năng. Thay vì cài thêm Axios, dự án đã xây dựng `httpClient` chuẩn hóa dựa trên native `fetch` + `AbortController` tại `src/services/api/httpClient.ts`.
+- **Dự án:** English Center (`english-center-mini`)
+- **Phạm vi kiểm toán:** Public Website, Student Portal, Study Zone, Test Online TOEIC, Hệ thống màu sắc & thương hiệu, Đồng bộ nguồn dữ liệu (Single Source of Truth), Responsive, Bảo mật Client-side & Khả năng sẵn sàng tích hợp Backend Node.js.
+- **Ngày hoàn tất:** 24/11/2026
 
 ---
 
-## 2. Đánh giá Kiến trúc Hiện tại
+## 1. TỔNG QUAN CÔNG NGHỆ & KIẾN TRÚC THỰC TẾ
 
-### 2.1. Cấu trúc phân khu (3 Khu vực độc lập)
-1. **Khu vực A – Public Website (`PublicLayout`)**:
-   - Trang chủ (`/`), Lịch khai giảng (`/schedule`), Chương trình học (`/courses`, `/courses/:slug`), Học viên điểm cao (`/hoc-vien`), Tài liệu học tập (`/tai-lieu/listening-reading`, `/tai-lieu/review-de-thi`), Về chúng tôi (`/about/branches`, `/about/news`, `/about/careers`), Liên hệ (`/contact`) và Form Đăng ký tư vấn (`ConsultationForm`).
-2. **Khu vực B – Student Portal & Hệ thống Tài khoản (`StudentLayout` & `auth`)**:
-   - Hệ thống tài khoản: Đăng nhập (`/login`), Đăng ký (`/register`), Quên mật khẩu (`/forgot-password`), Đặt lại mật khẩu (`/reset-password`), Đổi mật khẩu (`/change-password`), Menu tài khoản (`UserAccountDropdown`), Modal xác nhận đăng xuất (`LogoutConfirmModal`).
-   - Cổng học viên (`/student/*`): 5 phân hệ chuẩn với Top Navigation (`Trang chủ`, `Tài liệu & Kế hoạch học tập`, `Nộp bài & Điền điểm`, `Kết quả thi Mid & Final`, `Thời khóa biểu`).
-3. **Khu vực C – Study Zone & Test Online**:
-   - **Study Zone (`/study-zone/*`)**: 3 danh mục (`Ngữ pháp`, `Từ vựng`, `Luyện nghe`), chi tiết bài học lý thuyết, và phòng luyện tập trắc nghiệm toàn màn hình (`/study-zone/practice/:exerciseId`).
-   - **Test Online (`/test-online/*`)**: Danh sách đề thi, cấu hình chọn Part/thời gian, phòng thi TOEIC toàn màn hình (`/test-online/attempt/:attemptId`), trang kết quả (`/test-online/result/:attemptId`) và lịch sử làm bài (`/test-history`, `/student/history`).
+### 1.1. Stack công nghệ đang vận hành trong dự án
+| Nhóm công nghệ | Thư viện / Phiên bản (`package.json`) | Hiện trạng sử dụng thực tế |
+| --- | --- | --- |
+| UI Runtime | `react@^19.2.4`, `react-dom@^19.2.4` | Toàn bộ ứng dụng SPA |
+| Ngôn ngữ & Kiểu dữ liệu | `typescript@~6.0.2` (`strict: true`) | Kiểm tra kiểu nghiêm ngặt `tsc -b` không lỗi |
+| Bundler | `vite@^8.0.8` | Build production & Code-splitting theo từng trang (`lazy()`) |
+| Styling | `tailwindcss@^4.2.2`, `@tailwindcss/vite` | Một file CSS gốc duy nhất `src/index.css` |
+| Định tuyến | `react-router-dom@^7.14.1` | `createBrowserRouter` tại `src/app/router.tsx` |
+| HTTP Client | `axios@^1.15.0` | Đã cấu hình Interceptor Bearer Token + bắt lỗi `401` tại `src/services/api/httpClient.ts` |
+| Server State | `@tanstack/react-query@^5.99.1` | Dùng chính thức trong `student-portal` (`useStudentPortal.ts`) và bọc toàn app qua `QueryClientProvider` |
+| Validation | `zod@^4.3.6` | Xác thực schema form nộp bài tập & yêu cầu học vụ tại `studentPortal.schema.ts` |
+| Iconography | `lucide-react@^1.16.0` | Đồng bộ bộ icon vector trên toàn hệ thống |
+| Linter | `oxlint@^1.60.0` | Chạy kiểm tra tĩnh với **0 warnings, 0 errors** |
 
-### 2.2. Điểm mạnh (Strengths)
-- **Tách biệt giao diện thi cử toàn màn hình:** Các route làm bài `/test-online/attempt/:attemptId` và `/study-zone/practice/:exerciseId` được tách khỏi `PublicLayout` (không chứa Header/Footer gây xao nhãng), tự động cuộn lên đầu trang khi chuyển câu và thu gọn bảng điều hướng câu hỏi lên góc phải.
-- **Bảo mật đáp án (Zero Answer-Key Leakage):** Trong cả `Study Zone` và `Test Online`, đối tượng câu hỏi gửi xuống UI khi đang làm bài hoàn toàn không chứa `correctOptionId` hay `explanation`. Việc chấm điểm chỉ diễn ra khi nộp bài.
-- **Quy tắc thi TOEIC chặt chẽ:** Màn hình giới thiệu từng Part tự động tạm dừng đồng hồ đếm ngược và bù thời gian vào `deadlineAt` khi nhấn *"Bắt đầu Part"*; Audio Listening chỉ nghe 1 lần (`NOT_PLAYED -> PLAYING -> LOCKED`), khóa chuyển sang Reading khi chưa hoàn thành Listening.
-- **Không dùng `dangerouslySetInnerHTML`:** Toàn bộ nội dung bài viết, câu hỏi, đoạn văn TOEIC được render qua cấu trúc dữ liệu `ContentBlock` an toàn kết hợp bộ lọc URL `toSafeHttpUrl` / `toSafeEmbedUrl`, loại bỏ nguy cơ XSS.
+> **Ghi chú trung thực về thư viện chưa cài đặt:** `zustand` và `react-hook-form` không được cài trong `package.json`. Dự án hiện quản lý phiên đăng nhập qua `AuthContext` (`src/features/auth/context/AuthProvider.tsx`) và quản lý form bằng Controlled State kết hợp `validators.ts` / `zod`. Thiết kế này nhẹ, rõ ràng và không phát sinh xung đột state.
+
+### 1.2. Kiến trúc phân tầng (Feature-Based Architecture)
+Dự án tuân thủ cấu trúc `feature-sliced` rõ ràng:
+- `src/app/`: `App.tsx`, `router.tsx`, `ProtectedRoute.tsx`.
+- `src/config/`: `center-info.ts` (nguồn chuẩn thương hiệu `English Center`, hotline, email, địa chỉ, thông số tư vấn), `navigation.ts`.
+- `src/layouts/`: `PublicLayout.tsx` (Topbar `z-[60]` + Sticky Blue Header `z-40` + Footer), `StudentLayout.tsx` (Sidebar học viên + Print layout).
+- `src/services/api/`: `apiConfig.ts` (`VITE_USE_MOCK_API`), `endpoints.ts`, `httpClient.ts`, `queryClient.ts`, `mockUtils.ts`.
+- `src/features/`:
+  1. `auth`: Đăng nhập, Đăng ký, Quên mật khẩu, Đặt lại mật khẩu, Đổi mật khẩu, Dropdown tài khoản.
+  2. `about`: Giới thiệu, Cơ sở đào tạo, Tin tức, Tuyển dụng.
+  3. `courses`: Danh sách khóa học, Chi tiết khóa học, Form nhận tư vấn lộ trình.
+  4. `schedules`: Lịch khai giảng theo cơ sở/tháng, Modal đăng ký tư vấn lớp.
+  5. `student-news` & `articles`: Thành tích học viên công khai & Kho bài viết phương pháp học.
+  6. `learning-materials`: Tài liệu Luyện Nghe – Đọc và Tổng hợp đề thi chuẩn ETS.
+  7. `student-portal`: Tổng quan khóa học, Kế hoạch học tập, Thời khóa biểu, Bài tập Giảng viên giao, Điểm danh, Kết quả thi Mid/Final, Yêu cầu bảo lưu/chuyển lớp/hỗ trợ.
+  8. `study-zone`: Kho tự luyện Ngữ pháp, Từ vựng, Luyện nghe mở tự do (có trình phát âm thanh hình viên thuốc nghe lại nhiều lần).
+  9. `test-online`: Hệ thống thi trực tuyến TOEIC Listening & Reading (12 đề, chế độ Full Test & Practice theo Part, đồng hồ đếm ngược, âm thanh ẩn phát 1 lần tự chuyển câu ở Part 1–4, chuyển câu tự do ở Part 5–7, bảng điểm quy đổi LC/RC, lịch sử bài làm và màn hình xem lại đáp án chi tiết).
 
 ---
 
-## 3. Các Vấn đề Phát hiện & Đã Khắc phục trong Đợt Audit
+## 2. KIỂM TRA THƯƠNG HIỆU & HỆ THỐNG MÀU SẮC
 
-| Mã lỗi | Mức độ | Mô tả vấn đề phát hiện | Nguyên nhân | Trạng thái xử lý |
-|---|---|---|---|---|
-| **BUG-01** | **P0 – Critical** | Cache dữ liệu học viên trong `TanStack Query` không được xóa khi đăng xuất (`logout`), có nguy cơ hiển thị dữ liệu cũ nếu đăng nhập tài khoản khác ngay trên cùng tab. | `authService.logout()` chỉ xóa `authSessionStore` mà chưa gọi `queryClient.clear()`. | **Đã sửa** tại `src/features/auth/services/authService.ts`. |
-| **BUG-02** | **P0 – Critical** | Lịch sử lượt thi (`TestAttempt`) trong `Test Online` chưa gắn `studentId` và chưa lọc theo tài khoản học viên đang đăng nhập. | `attemptService.ts` lưu chung map trong `localStorage` mà chưa gắn trường `studentId`. | **Đã sửa** tại `test.types.ts`, `attemptService.ts`, `historyApi.ts` và `useTestHistory.ts`. |
-| **BUG-03** | **P1 – High** | Khi thoát khỏi phòng thi `Test Online` hoặc bài tập `Study Zone` lần đầu tiên, người dùng phải bấm nút xác nhận *"Thoát bài làm"* 2 lần mới thoát được. | `useBlocker` đọc React state bất đồng bộ trước khi `navigate()` hoàn tất. | **Đã sửa** bằng `allowLeaveRef = useRef(false)` đồng bộ tại `TestTakingPage.tsx` và `StudyExercisePage.tsx`. |
-| **BUG-04** | **P1 – High** | `attemptApi.confirmPartIntroduction` chỉ mới cập nhật `attemptStorageService` (Mock) mà thiếu nhánh gọi `httpClient.post` khi `USE_MOCK_API = false`. | Thiếu nhánh `!USE_MOCK_API` trong hàm xác nhận màn hình giới thiệu Part. | **Đã sửa** tại `src/features/test-online/api/attemptApi.ts`. |
-| **BUG-05** | **P1 – High** | `historyApi.getHistory(params)` ở chế độ API thật (`!USE_MOCK_API`) chưa truyền `params` bộ lọc (`testSlug`, `status`, `fromDate`, `toDate`) lên query string. | `httpClient.get` chỉ được truyền URL mà thiếu đối số `params`. | **Đã sửa** tại `src/features/test-online/api/historyApi.ts`. |
-| **BUG-06** | **P2 – Medium** | `httpClient.ts` mới chỉ hỗ trợ `GET` và `POST`, đồng thời cố định `credentials: 'omit'`. | Giai đoạn đầu chỉ xây dựng cho Public Website. | **Đã nâng cấp** hỗ trợ `GET`, `POST`, `PATCH`, `DELETE` và `credentials: 'include'` tại `src/services/api/httpClient.ts`. |
-| **BUG-07** | **P2 – Medium** | `courseId` trong dữ liệu lớp học của Student Portal dùng `'crs-submarine-700'` chưa khớp với `id: 'submarine-toeic'` của danh mục khóa học công khai. | Khác quy ước đặt ID giữa 2 file mock. | **Đã chuẩn hóa** về `'submarine-toeic'` tại `studentPortalMockData.ts`. |
+### 2.1. Đồng bộ thương hiệu `English Center`
+- Toàn bộ giao diện hiển thị (Header, Footer, Trang chủ, Giới thiệu, Liên hệ, Đăng nhập/Đăng ký/Quên mật khẩu, Cổng học viên `StudentLayout`, Study Zone, Test Online, Bảng kết quả thi, Tiêu đề tab `document.title`) đã được chuẩn hóa thống nhất thành **`English Center`** / **`ENGLISH CENTER`**.
+- Toàn bộ chuỗi thương hiệu cũ còn sót (`HMC TOEIC`, email `@hmctoeic.edu.vn`, mã lớp `HMC-S01`, mã đề `HMC-2025-T01/T02`, khóa lưu trữ `hmc_portal_*`) đã được thay thế hoàn toàn sang chuẩn `English Center` (`@englishcenter.edu.vn`, `EC-S01`, `EC-2025-T01/T02`, `ec_portal_*`).
+
+### 2.2. Hệ thống màu sắc chuẩn (Sky Blue & Clean Academic UI)
+Hệ thống biến CSS tại `src/index.css` và các utility Tailwind tuân thủ nhất quán bảng màu xanh dương nhạt dịu mắt:
+- **Màu chủ đạo thương hiệu (`--ec-primary`):** `#75BDEB` (Header chính, thanh nhấn dọc khung câu hỏi, tab/viền chủ đạo).
+- **Màu xanh đậm tạo độ tương phản chữ (`--ec-primary-dark`):** `#2878B8` (Chữ nhấn, link, badge thông tin, nút phụ).
+- **Màu nền xanh nhạt (`--ec-soft-blue` / `--ec-bg`):** `#EAF6FD` / `#F5FAFE`.
+- **Nền thẻ nội dung:** `#FFFFFF`, viền `#DCEAF3`.
+- **Văn bản:** Chính `#243B53`, phụ `#718096`.
+- **Điểm nhấn hành động chính (CTA):** `#F26522` (Nút `TEST ONLINE`, `NỘP BÀI`, `LÀM LẠI`, `NHẬN TƯ VẤN`).
+- **Trạng thái ngữ nghĩa:** Đúng/Đạt `#1F7A4C` (`#E3F5EC`), Cảnh báo `#9E6300` (`#FFF3D6`), Lỗi/Sai `#B93A2E` (`#FDECE9`).
 
 ---
 
-## 4. Đánh giá 10 Câu hỏi Kết luận Nghiệm thu
+## 3. KIỂM TRA CHỨC NĂNG THEO 4 PHÂN KHU
 
-1. **Frontend hiện tại đạt mức độ nào?**
-   - Đạt mức **Production-Ready UI & Backend-Ready Architecture** cho phạm vi Khách truy cập và Học viên. Toàn bộ 183 files vượt qua `oxlint` và `tsc -b && vite build` với **0 lỗi, 0 cảnh báo**.
-2. **Những phần nào đã đủ tốt?**
-   - Kiến trúc phân tách 3 khu vực (`PublicLayout`, `StudentLayout`, Phòng thi độc lập), hệ thống `Test Online` chuẩn cấu trúc ETS 7 Parts, `Study Zone`, `Student Portal` 5 phân hệ và hệ thống `Authentication`.
-3. **Những phần nào cần sửa ngay?**
-   - Toàn bộ 7 vấn đề P0, P1, P2 phát hiện trong đợt Audit (cô lập cache khi logout, cô lập lịch sử thi theo `studentId`, nhánh API cho `confirmPartIntroduction`, truyền query params cho `historyApi`, mở rộng `httpClient`) **đã được sửa dứt điểm ngay trong phiên này**.
-4. **Những phần nào chưa được triển khai (ngoài phạm vi hoặc chờ Backend)?**
-   - `Management Portal / Admin Portal` (dành cho Admin, Giáo vụ, Giảng viên, Sale, Kế toán) — nằm ngoài phạm vi Frontend học viên.
-   - Hệ thống thông báo đẩy thời gian thực (WebSocket/Push Notifications) và Upload file nhị phân trực tiếp lên Cloud Storage (hiện học viên nộp bài qua liên kết Google Drive/Docs theo đúng quy trình nghiệp vụ của trung tâm).
-5. **Những phần nào đang sử dụng Mock Data?**
-   - Toàn bộ các tính năng đọc/ghi dữ liệu hiện chạy qua tầng `Mock Service / Mock Repository` khi `USE_MOCK_API = true` và lưu trạng thái tương tác tạm thời trong `localStorage` để kiểm thử đầy đủ luồng người dùng.
-6. **Kiến trúc hiện tại có phù hợp để tích hợp Backend Node.js không?**
-   - **Hoàn toàn phù hợp.** Không có bất kỳ Component nào gọi thẳng HTTP request hoặc phụ thuộc cứng vào file Mock. Chỉ cần cấu hình `VITE_API_BASE_URL` và `VITE_DATA_SOURCE=api`, toàn bộ ứng dụng sẽ chuyển sang gọi REST API thật qua `httpClient`.
-7. **Những API nào Backend cần xây dựng?**
-   - Đã được liệt kê đầy đủ kèm Method, Endpoint, Request/Response, Auth và Error Cases trong [FRONTEND_API_CONTRACT.md](file:///d:/Web/english-center-mini/docs/FRONTEND_API_CONTRACT.md).
-8. **Dữ liệu nào cần thống nhất giữa Frontend và Backend?**
-   - Các thực thể `User`, `StudentProfile`, `Course`, `Class`, `Enrollment`, `LessonSession`, `Assignment`, `AssignmentSubmission`, `AttendanceRecord`, `OfficialExamRecord`, `SupportRequest`, `StudyTopic`, `StudyExercise`, `Test`, `TestAttempt`, `TestAttemptResult` trong [FRONTEND_DATA_MODEL.md](file:///d:/Web/english-center-mini/docs/FRONTEND_DATA_MODEL.md).
-9. **Những rủi ro nào có thể phát sinh khi tích hợp?**
-   - Lệch đồng hồ giữa Client và Server trong phòng thi `Test Online` (cần lấy thời gian máy chủ làm chuẩn cho `deadlineAt`); cấu hình CORS khi dùng `credentials: 'include'`; và giới hạn tốc độ (Rate Limiting) khi học viên chuyển câu hỏi liên tục.
-10. **Dự án cần hoàn thành những việc gì trước khi bắt đầu kết nối Backend?**
-    - Thống nhất tài liệu `FRONTEND_API_CONTRACT.md` và `BACKEND_INTEGRATION_CHECKLIST.md` với đội phát triển Backend Node.js để triển khai Database Schema và các REST Endpoints tương ứng.
+### A. Public Website
+- **Hoạt động ổn định:** Trang chủ (`/`), Về chúng tôi (`/about`), Cơ sở đào tạo (`/branches`), Tin tức (`/news`, `/news/:slug`), Tuyển dụng (`/careers`, `/careers/:slug`), Khóa học (`/courses`, `/courses/:slug`), Lịch khai giảng (`/schedule`), Thành tích học viên (`/students`, `/students/:slug`), Tài liệu TOEIC (`/learning-materials/*`), Liên hệ (`/contact`).
+- **Cải tiến sau kiểm toán:**
+  - Chi nhánh trực tuyến (`branches.ts`) lấy trực tiếp `centerInfo.hotline` và `centerInfo.name`.
+  - Tin tuyển dụng (`jobs.ts`, `CareerDetailPage.tsx`) liên kết khóa ngoại `branchId` với `branches.ts` và tự động khóa nút `"Ứng tuyển ngay"` khi vị trí đóng tuyển (`closed`) hoặc quá hạn `deadline`.
+  - Lịch khai giảng (`scheduleMockData.ts`) đồng bộ 100% `courseId` với `courses/mocks.ts` (khắc phục lỗi 2 lịch khai giảng bị ẩn do lệch mã khóa học).
+
+### B. Authentication & Authorization
+- **Luồng xác thực:** Đăng nhập / Đăng ký (`/auth`), Quên mật khẩu (`/auth/forgot-password`), Đặt lại mật khẩu (`/auth/reset-password`), Đổi mật khẩu (`/student/change-password`).
+- **Sau đăng nhập:** Chuyển hướng mặc định về trang chủ Website (`/`) hoặc trang người dùng đang truy cập dở (`state.from`), không ép chuyển sang `/student` đối với học viên chưa có lớp học.
+- **Bảo vệ route (`ProtectedRoute.tsx`):** Kiểm tra trạng thái đăng nhập và `allowedRoles`, hiển thị skeleton mượt mà khi khôi phục phiên và tránh vòng lặp redirect.
+- **Bảo mật dữ liệu phiên:** `AuthUser` không chứa `password` hay `passwordHash`; mật khẩu mẫu chỉ đối chiếu nội bộ tại tầng giả lập Server (`authMockData.ts`).
+
+### C. Student Portal (`/student/*`)
+- **Phân tách rõ 2 trạng thái tài khoản:**
+  1. Học viên đã được xếp lớp (`stu-001` Đỗ Như Đạt, `stu-002` Nguyễn Minh Anh): Xem đầy đủ Dashboard, Kế hoạch học tập 24 buổi, Thời khóa biểu theo tuần, Bài tập Giảng viên giao & Nộp bài (kèm Zod validation link Google Drive), Điểm danh, Kết quả Mid-test / Final-test và Gửi yêu cầu học vụ.
+  2. Học viên mới đăng ký chưa ghi danh lớp (`stu-003` hoặc tài khoản đăng ký mới): Hiển thị `NoEnrollmentCard` hướng dẫn xem khóa học, lịch khai giảng hoặc tự luyện tại Study Zone / Test Online mà không gặp lỗi crash dữ liệu rỗng (`null`).
+
+### D. Study Zone & Test Online TOEIC
+- **Tách biệt rạch ròi nghiệp vụ:**
+  - **Study Zone (`/study-zone/*`):** Kho tự luyện mở tự do, không giới hạn thời gian, cho phép chuyển câu tự do và hiển thị trình phát âm thanh hình viên thuốc (`#F1F3F4`) nghe lại nhiều lần.
+  - **Bài tập Giảng viên giao (`/student/assignments`):** Gắn chặt với lớp học (`classInfo`), buổi học (`sessionNumber`), hạn nộp (`dueDate`) và trạng thái Giảng viên xác nhận.
+  - **Test Online (`/test-online/*`):**
+    - Hỗ trợ 12 đề TOEIC Listening & Reading (10 đề bộ 2026 + 2 đề bộ 2025), mỗi đề có tiền tố mã câu hỏi và đáp án riêng (`t01`..`t12`).
+    - Cấu trúc chuẩn khung câu hỏi 2 cột thống nhất cho mọi Part 1–7, mỗi câu hỏi đều hỗ trợ bộ 3 trường `{ questionText, audioUrl, imageUrl }` (ẩn gọn phần khuyết mà vẫn giữ nguyên bố cục 2 cột).
+    - **Chế độ thi nghiêm ngặt (`exam`):** Nút `BẮT ĐẦU` căn giữa dưới bảng hướng dẫn mỗi Part; Part 1–4 phát âm thanh ngầm 1 lần duy nhất (ẩn thanh điều khiển audio), khóa chuyển câu/Part thủ công và tự động sang câu/cụm câu kế tiếp ngay khi hết audio; sang Part 5–7 khóa vĩnh viễn Part 1–4 và mở tự do chuyển qua lại mọi câu đơn lẫn cụm câu đọc hiểu mà không bị nhảy cuộn lên đầu trang.
+    - **Chữa bài & Lịch sử (`/test-online/results/:attemptId`, `/test-history`):** Hiển thị lại thanh âm thanh hình viên thuốc để nghe lại, khung `Giải thích:` nền xanh nhạt `#F0F7FF` in đậm phương án đúng, phông số `tabular-nums` đồng bộ và phân lập quyền sở hữu dữ liệu bài làm (`ownerId`) giữa các tài khoản.
+
+---
+
+## 4. TỔNG HỢP VẤN ĐỀ PHÁT HIỆN & ĐÃ XỬ LÝ THEO MỨC ĐỘ ƯU TIÊN
+
+| Mã | Mức độ | Khu vực | Mô tả vấn đề | Trạng thái |
+| --- | --- | --- | --- | --- |
+| `AUD-01` | **P0 (Critical)** | Test Online / Security | Lỗ hổng IDOR ở tầng Mock Service: người dùng khác hoặc khách chưa đăng nhập có thể đọc `Attempt` / `TestHistory` của `stu-001` nếu biết `attemptId` hoặc dùng fallback mặc định. | **Đã sửa triệt để** |
+| `AUD-02` | **P1 (High)** | Shared Data Sync | Lệch tên cơ sở (`Cơ sở 1 – Cầu Giấy` vs `Cơ sở 1 – Hà Đông`) và lệch `courseId` (`speaking-writing`, `master-toeic`) giữa `branches.ts`, `jobs.ts`, `scheduleMockData.ts` và `studentPortalMockData.ts`. | **Đã sửa triệt để** |
+| `AUD-03` | **P1 (High)** | Test Online Data | Các đề `TEST 5..10 – 2026` và `TEST 1..2 – 2025` dùng trùng tiền tố câu hỏi `t01..t06` và còn mã đề cũ `HMC-2025-T01/T02`. | **Đã sửa triệt để (`t01..t12`, `EC-2025-*`)** |
+| `AUD-04` | **P1 (High)** | Test Online Config | Trang chi tiết đề `TestDetailPage.tsx` chưa kiểm tra cờ `test.allowPartSelection` và `part.allowStandaloneSelection` trong hàm `togglePart`. | **Đã sửa triệt để** |
+| `AUD-05` | **P2 (Medium)** | Brand Consistency | Còn sót thương hiệu cũ `HMC TOEIC` trong `StudentLayout`, `AuthPage`, `ResetPasswordPage`, `StudyExercisePage`, `TestListPage`, `TestResultSummary` và mock data. | **Đã sửa 100%** |
+| `AUD-06` | **P2 (Medium)** | Router & Dead Code | Tồn tại 2 route trùng lặp cho lịch sử bài làm (`/student/history` và `/test-history`) và 5 component cũ không còn được import. | **Đã dọn sạch & chuẩn hóa redirect** |
+| `AUD-07` | **P2 (Medium)** | Responsive & A11y | Bảng cấu trúc Part trên màn `320px` hơi chật cột câu; bảng tổng hợp Kế hoạch học tập thiếu `min-w`; nút tròn câu hỏi `QuestionNavigator` chưa có `aria-label` trạng thái chi tiết. | **Đã sửa triệt để** |
+| `AUD-08` | **P3 (Backend Dep.)** | Backend Security | Đáp án chuẩn `serverTestAnswerKeys` hiện nằm trong bundle Mock ở client khi `VITE_USE_MOCK_API !== 'false'`; JWT HttpOnly / RBAC thực tế cần Backend Node.js thực thi. | **Đã tách tầng & tài liệu hóa cho Backend** |

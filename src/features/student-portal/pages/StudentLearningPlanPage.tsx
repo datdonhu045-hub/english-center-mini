@@ -174,7 +174,7 @@ export function StudentLearningPlanPage() {
           </div>
         ) : viewMode === 'table' ? (
           <div className="print-card overflow-x-auto rounded-[14px] border border-[#DCEAF3] bg-white p-[18px]">
-            <table className="w-full border-collapse text-left text-[14px]">
+            <table className="w-full min-w-[640px] border-collapse text-left text-[14px]">
               <thead>
                 <tr className="border-b border-[#DCEAF3] text-[#243B53]">
                   <th className="p-2.5 font-bold">Tuần</th>

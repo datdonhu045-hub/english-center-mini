@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
-import { Pause, Play, RotateCcw, RotateCw, Volume2, VolumeX } from 'lucide-react'
+import { MoreVertical, Pause, Play, Volume2, VolumeX } from 'lucide-react'
 
 interface AudioPlayerProps {
   src: string
   title?: string
+  showLabel?: boolean
+  labelText?: string
   defaultDurationSeconds?: number
 }
 
@@ -18,30 +20,45 @@ function formatSeconds(sec: number): string {
 }
 
 /**
- * Trình phát Audio tương tác cho Study Zone:
- * - Hỗ trợ Play/Pause, thanh tiến trình, thời gian hiện tại / tổng thời lượng, tua lùi/tiến 5s, bật/tắt âm lượng, chỉnh tốc độ phát.
- * - Tuyệt đối KHÔNG tự động phát (no autoplay) khi học viên mở trang hoặc chuyển câu hỏi.
+ * Trình phát âm thanh dạng thanh viên thuốc (pill bar) tối giản giống ảnh mẫu 1 & 2:
+ * - Chỉ hiển thị tại Study Zone và chế độ Xem lại / Lịch sử làm bài để học viên nghe lại.
+ * - Tuyệt đối không tự động phát khi vừa vào trang hay chuyển câu.
  */
 export default function AudioPlayer({
   src,
-  title,
+  showLabel = false,
+  labelText = 'Âm thanh:',
   defaultDurationSeconds = 0,
 }: AudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const menuRef = useRef<HTMLDivElement | null>(null)
+
   const [playing, setPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(defaultDurationSeconds)
   const [muted, setMuted] = useState(false)
-  const [volume, setVolume] = useState(1)
-  const [speedIndex, setSpeedIndex] = useState(1) // 1.0x
+  const [speed, setSpeed] = useState(1)
+  const [menuOpen, setMenuOpen] = useState(false)
 
-  // Khi đổi nguồn audio (chuyển câu hỏi), dừng phát và đưa về 0:00
+  // Dừng phát và đặt về 0:00 khi chuyển sang câu hỏi / file âm thanh khác
   useEffect(() => {
     const audio = audioRef.current
     if (!audio) return
     audio.pause()
     audio.currentTime = 0
   }, [src])
+
+  // Đóng menu tốc độ khi bấm ra ngoài
+  useEffect(() => {
+    if (!menuOpen) return
+    const handleOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleOutside)
+    return () => document.removeEventListener('mousedown', handleOutside)
+  }, [menuOpen])
 
   const togglePlay = async () => {
     const audio = audioRef.current
@@ -54,6 +71,7 @@ export default function AudioPlayer({
     }
 
     try {
+      audio.playbackRate = speed
       await audio.play()
       setPlaying(true)
     } catch {
@@ -68,14 +86,6 @@ export default function AudioPlayer({
     setCurrentTime(nextValue)
   }
 
-  const skipBy = (deltaSeconds: number) => {
-    const audio = audioRef.current
-    if (!audio) return
-    const target = Math.max(0, Math.min(duration || 0, audio.currentTime + deltaSeconds))
-    audio.currentTime = target
-    setCurrentTime(target)
-  }
-
   const toggleMute = () => {
     const audio = audioRef.current
     if (!audio) return
@@ -84,34 +94,24 @@ export default function AudioPlayer({
     setMuted(nextMuted)
   }
 
-  const handleVolumeChange = (nextVolume: number) => {
-    const audio = audioRef.current
-    if (!audio) return
-    audio.volume = nextVolume
-    setVolume(nextVolume)
-    if (nextVolume > 0 && muted) {
-      audio.muted = false
-      setMuted(false)
-    }
-  }
-
-  const cycleSpeed = () => {
-    const nextIdx = (speedIndex + 1) % SPEED_OPTIONS.length
-    setSpeedIndex(nextIdx)
+  const handleSelectSpeed = (nextSpeed: number) => {
+    setSpeed(nextSpeed)
     if (audioRef.current) {
-      audioRef.current.playbackRate = SPEED_OPTIONS[nextIdx]
+      audioRef.current.playbackRate = nextSpeed
     }
+    setMenuOpen(false)
   }
 
   const effectiveDuration = duration > 0 ? duration : defaultDurationSeconds
+  const progressPercent =
+    effectiveDuration > 0
+      ? Math.min(100, Math.max(0, (currentTime / effectiveDuration) * 100))
+      : 0
 
   return (
-    <div className="rounded-xl border border-[#DCEAF3] bg-white p-3 shadow-xs">
-      {title && (
-        <div className="mb-2 flex items-center justify-between text-xs font-semibold text-[#718096]">
-          <span>{title}</span>
-          <span className="text-[11px] text-[#2878B8]">Nhấn Play để nghe</span>
-        </div>
+    <div className="ec-reading-font w-full">
+      {showLabel && (
+        <p className="mb-2.5 text-[14px] font-bold text-[#111827]">{labelText}</p>
       )}
 
       <audio
@@ -131,87 +131,101 @@ export default function AudioPlayer({
         }}
       />
 
-      <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
-        {/* Play / Pause */}
+      {/* Thanh pill xám nhạt bo tròn 2 đầu giống hệt ảnh mẫu 1 */}
+      <div className="relative flex h-[54px] w-full select-none items-center gap-3.5 rounded-full bg-[#F1F3F4] px-4 sm:px-5">
+        {/* Nút Play / Pause */}
         <button
           type="button"
           onClick={togglePlay}
-          aria-label={playing ? 'Tạm dừng' : 'Phát ghi âm'}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#2878B8] text-white shadow-xs transition hover:bg-[#1f5f94]"
+          aria-label={playing ? 'Tạm dừng' : 'Phát âm thanh'}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#1F1F1F] transition hover:bg-black/8"
         >
-          {playing ? <Pause className="h-4 w-4" /> : <Play className="ml-0.5 h-4 w-4 fill-current" />}
+          {playing ? (
+            <Pause className="h-[18px] w-[18px] fill-current stroke-[2.2]" />
+          ) : (
+            <Play className="ml-0.5 h-[18px] w-[18px] fill-current stroke-[2.2]" />
+          )}
         </button>
 
-        {/* Tua lùi / tiến 5s */}
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => skipBy(-5)}
-            title="Tua lùi 5 giây"
-            aria-label="Tua lùi 5 giây"
-            className="rounded-md p-1.5 text-[#718096] transition hover:bg-[#EAF6FD] hover:text-[#2878B8]"
-          >
-            <RotateCcw className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => skipBy(5)}
-            title="Tua tiến 5 giây"
-            aria-label="Tua tiến 5 giây"
-            className="rounded-md p-1.5 text-[#718096] transition hover:bg-[#EAF6FD] hover:text-[#2878B8]"
-          >
-            <RotateCw className="h-4 w-4" />
-          </button>
-        </div>
-
         {/* Thời gian hiện tại / Tổng thời lượng */}
-        <span className="shrink-0 font-mono text-xs font-semibold text-[#243B53]">
+        <span className="shrink-0 text-[14px] font-normal tabular-nums tracking-tight text-[#1F1F1F]">
           {formatSeconds(currentTime)} / {formatSeconds(effectiveDuration)}
         </span>
 
-        {/* Thanh tiến trình */}
-        <input
-          type="range"
-          min={0}
-          max={effectiveDuration || 1}
-          step={0.1}
-          value={Math.min(currentTime, effectiveDuration || 1)}
-          aria-label="Tiến trình âm thanh"
-          onChange={(e) => handleSeek(Number(e.target.value))}
-          className="h-1.5 min-w-[90px] flex-1 cursor-pointer appearance-none rounded-lg bg-[#DCEAF3] accent-[#2878B8]"
-        />
+        {/* Thanh kéo tiến trình âm thanh */}
+        <div className="group relative mx-1 flex h-6 min-w-[80px] flex-1 items-center">
+          <div className="relative h-[4px] w-full rounded-full bg-[#5F6368]/75">
+            <div
+              className="h-full rounded-full bg-[#1F1F1F]"
+              style={{ width: `${progressPercent}%` }}
+            />
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#1F1F1F]/25 transition group-hover:scale-110"
+              style={{ left: `${progressPercent}%` }}
+            >
+              <span className="block h-full w-full scale-50 rounded-full bg-[#1F1F1F]" />
+            </span>
+          </div>
 
-        {/* Điều chỉnh âm lượng */}
-        <div className="hidden items-center gap-1.5 sm:flex">
-          <button
-            type="button"
-            onClick={toggleMute}
-            aria-label={muted ? 'Bật tiếng' : 'Tắt tiếng'}
-            className="rounded-md p-1 text-[#718096] transition hover:text-[#2878B8]"
-          >
-            {muted || volume === 0 ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-          </button>
           <input
             type="range"
             min={0}
-            max={1}
+            max={effectiveDuration || 1}
             step={0.05}
-            value={muted ? 0 : volume}
-            aria-label="Âm lượng"
-            onChange={(e) => handleVolumeChange(Number(e.target.value))}
-            className="h-1 w-16 cursor-pointer appearance-none rounded-lg bg-[#DCEAF3] accent-[#2878B8]"
+            value={Math.min(currentTime, effectiveDuration || 1)}
+            aria-label="Thanh tiến trình âm thanh"
+            onChange={(e) => handleSeek(Number(e.target.value))}
+            className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
           />
         </div>
 
-        {/* Tốc độ phát */}
+        {/* Nút Loa bật / tắt tiếng */}
         <button
           type="button"
-          onClick={cycleSpeed}
-          title="Đổi tốc độ phát"
-          className="rounded-md border border-[#DCEAF3] bg-[#F5FAFE] px-2 py-1 text-xs font-bold text-[#243B53] transition hover:border-[#2878B8] hover:text-[#2878B8]"
+          onClick={toggleMute}
+          aria-label={muted ? 'Bật âm thanh' : 'Tắt âm thanh'}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#1F1F1F] transition hover:bg-black/8"
         >
-          {SPEED_OPTIONS[speedIndex]}x
+          {muted ? (
+            <VolumeX className="h-[18px] w-[18px]" />
+          ) : (
+            <Volume2 className="h-[18px] w-[18px]" />
+          )}
         </button>
+
+        {/* Nút 3 chấm dọc (Tốc độ phát) */}
+        <div ref={menuRef} className="relative shrink-0">
+          <button
+            type="button"
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-label="Tùy chọn tốc độ phát"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-[#1F1F1F] transition hover:bg-black/8"
+          >
+            <MoreVertical className="h-[18px] w-[18px]" />
+          </button>
+
+          {menuOpen && (
+            <div className="absolute bottom-full right-0 z-30 mb-2 w-36 overflow-hidden rounded-xl border border-[#DCEAF3] bg-white py-1.5 shadow-lg">
+              <p className="px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-[#718096]">
+                Tốc độ phát
+              </p>
+              {SPEED_OPTIONS.map((opt) => (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => handleSelectSpeed(opt)}
+                  className={`flex w-full items-center justify-between px-3 py-1.5 text-left text-xs font-semibold transition hover:bg-[#EAF6FD] ${
+                    speed === opt ? 'bg-[#EAF6FD]/70 font-bold text-[#2878B8]' : 'text-[#243B53]'
+                  }`}
+                >
+                  <span>{opt === 1 ? 'Chuẩn (1x)' : `${opt}x`}</span>
+                  {speed === opt && <span className="text-[#2878B8]">✓</span>}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

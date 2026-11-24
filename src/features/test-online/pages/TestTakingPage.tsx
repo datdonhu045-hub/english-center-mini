@@ -9,6 +9,8 @@ import {
   X,
 } from 'lucide-react'
 import { EmptyBlock, ErrorBlock, LoadingBlock } from '@/components/ui/StateViews'
+import { centerInfo } from '@/config/center-info'
+import { useAuth } from '@/features/auth/hooks/useAuth'
 import { useTestAttemptSession } from '@/features/test-online/hooks/useTestAttempt'
 import { useTestTimer } from '@/features/test-online/hooks/useTestTimer'
 import { attemptApi } from '@/features/test-online/api/attemptApi'
@@ -18,6 +20,11 @@ import TestQuestionRenderer from '@/features/test-online/components/TestQuestion
 import QuestionNavigator from '@/features/test-online/components/QuestionNavigator'
 import TestSubmitModal from '@/features/test-online/components/TestSubmitModal'
 import ExitExamConfirmModal from '@/features/test-online/components/ExitExamConfirmModal'
+import {
+  isMultiQuestionSharedGroup,
+  normalizeGroupMedia,
+  normalizeQuestionMedia,
+} from '@/features/test-online/utils/questionMedia'
 import type {
   QuestionGroup,
   TestAttempt,
@@ -38,6 +45,7 @@ interface ExamStepCursor {
 export default function TestTakingPage() {
   const { attemptId = '' } = useParams<{ attemptId: string }>()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const { data: session, loading, error, retry } = useTestAttemptSession(attemptId)
 
   const [localAttempt, setLocalAttempt] = useState<TestAttempt | null>(null)
@@ -49,7 +57,6 @@ export default function TestTakingPage() {
   const [submitting, setSubmitting] = useState(false)
   const [navDrawerOpen, setNavDrawerOpen] = useState(false)
 
-  // Dùng useRef để cờ cho phép thoát có hiệu lực tức thì trước khi navigate() kích hoạt useBlocker (tránh phải bấm Thoát 2 lần)
   const allowLeaveRef = useRef(false)
 
   const attempt =
@@ -62,7 +69,6 @@ export default function TestTakingPage() {
     attempt && attempt.status === 'in_progress' && !submitting,
   )
 
-  // Chặn người dùng bấm nút Back của trình duyệt hoặc điều hướng rời trang khi đang làm dở bài thi
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
       isExamInProgress &&
@@ -71,7 +77,6 @@ export default function TestTakingPage() {
       !nextLocation.pathname.startsWith('/test-online/result/'),
   )
 
-  // Cảnh báo trình duyệt khi người dùng đóng tab hoặc F5
   useEffect(() => {
     if (!isExamInProgress) return
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -82,7 +87,6 @@ export default function TestTakingPage() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
   }, [isExamInProgress])
 
-  // Nếu lượt thi đã nộp hoặc đã hết giờ trước đó -> chuyển sang trang kết quả
   useEffect(() => {
     if (attempt && attempt.status !== 'in_progress') {
       navigate(`/test-online/result/${attempt.id}`, { replace: true })
@@ -99,17 +103,14 @@ export default function TestTakingPage() {
 
   /**
    * Chuỗi bước làm bài:
-   * - Với các Part câu đơn (không có đoạn văn/audio dùng chung cho nhiều câu như Part 1, Part 2, Part 5):
-   *   chuyển từng câu 1 (Câu 1 -> Câu 2... hoặc Câu 101 -> Câu 102 -> Câu 103).
-   * - Với các Part dùng chung đoạn hội thoại / bài nói / đoạn văn (Part 3, Part 4, Part 6, Part 7):
-   *   hiển thị theo cụm câu hỏi gắn với đoạn đó.
+   * - Part 1, Part 2, Part 5 (câu đơn): mỗi bước là 1 câu riêng lẻ.
+   * - Part 3, Part 4, Part 6, Part 7 (cụm câu dùng chung đoạn hội thoại / bài nói / đoạn văn): mỗi bước là 1 cụm câu hỏi.
    */
   const examSteps = useMemo<ExamStepCursor[]>(() => {
     const steps: ExamStepCursor[] = []
     for (const part of activeParts) {
       for (const group of part.questionGroups) {
-        const isSharedMultiQuestionStimulus =
-          group.stimulus.length > 0 && group.questions.length > 1
+        const isSharedMultiQuestionStimulus = isMultiQuestionSharedGroup(group)
 
         if (!isSharedMultiQuestionStimulus) {
           for (const q of group.questions) {
@@ -152,7 +153,6 @@ export default function TestTakingPage() {
     [attempt],
   )
 
-  // Tự động thu bài khi đồng hồ đếm ngược chạm 00:00:00
   const handleAutoExpire = useCallback(async () => {
     if (!attempt || attempt.status !== 'in_progress' || submitting) return
     setSubmitting(true)
@@ -186,14 +186,22 @@ export default function TestTakingPage() {
     )
   }, [activeParts, attempt])
 
+  // Tìm chính xác nhóm câu hỏi hiện tại theo selectedGroupId hoặc theo currentQuestionId (đảm bảo chuyển cụm câu ở Part 6, 7 và tải lại trang luôn đúng nhóm)
   const currentGroup = useMemo(() => {
     if (!currentPart) return undefined
     if (selectedGroupId) {
       const found = currentPart.questionGroups.find((g) => g.id === selectedGroupId)
       if (found) return found
     }
+    const targetQId = selectedQuestionId ?? attempt?.currentQuestionId
+    if (targetQId) {
+      const byQuestion = currentPart.questionGroups.find((g) =>
+        g.questions.some((q) => q.id === targetQId),
+      )
+      if (byQuestion) return byQuestion
+    }
     return currentPart.questionGroups[0]
-  }, [currentPart, selectedGroupId])
+  }, [currentPart, selectedGroupId, selectedQuestionId, attempt?.currentQuestionId])
 
   const activeQuestionId =
     selectedQuestionId ??
@@ -201,43 +209,72 @@ export default function TestTakingPage() {
     currentGroup?.questions[0]?.id ??
     ''
 
-  // Chuyển sang một Part / Nhóm / Câu hỏi cụ thể
+  /**
+   * Hàm điều hướng trung tâm tuân thủ nghiêm ngặt quy chế TOEIC:
+   * - Không cho vào Reading khi chưa hoàn thành Listening (`!effectiveAttempt.listeningCompleted`).
+   * - Không cho quay ngược về Listening sau khi đã sang Reading (`effectiveAttempt.listeningCompleted`).
+   * - Ở Reading (Part 5, 6, 7), khi bấm chọn câu/Part trực tiếp (`skipIntroIfReading = true`), mở thẳng câu/cụm câu đó mà không bị kẹt ở màn hình giới thiệu.
+   */
   const moveToPartAndGroup = useCallback(
     async (
       targetPart: TestPart,
       targetGroup: QuestionGroup,
       targetQuestionId?: string,
-      withListeningDoneNotice = false,
-      overrideAttempt?: TestAttempt,
+      options?: {
+        withListeningDoneNotice?: boolean
+        overrideAttempt?: TestAttempt
+        skipIntroIfReading?: boolean
+      },
     ) => {
-      const effectiveAttempt = overrideAttempt ?? attempt
+      const effectiveAttempt = options?.overrideAttempt ?? attempt
       if (!effectiveAttempt) return
 
-      // Quy tắc khóa Reading khi chưa hoàn thành toàn bộ audio Listening
+      // Chặn nhảy vào Reading khi chưa nghe xong Listening
       if (targetPart.section === 'reading' && !effectiveAttempt.listeningCompleted) {
         return
       }
 
-      const hasSeenIntro = effectiveAttempt.introducedParts.includes(targetPart.partNumber)
-      const nextStage: TestAttempt['currentStage'] = hasSeenIntro ? 'questions' : 'part_intro'
+      // Chặn quay lại Listening khi đã hoàn thành Listening (đã sang Reading)
+      if (targetPart.section === 'listening' && effectiveAttempt.listeningCompleted) {
+        return
+      }
+
       const qId = targetQuestionId ?? targetGroup.questions[0]?.id ?? ''
+      const forceQuestions =
+        Boolean(options?.skipIntroIfReading) && targetPart.section === 'reading'
+
+      // Nếu đang đứng ở màn hình giới thiệu Part mà nhảy thẳng vào câu hỏi Reading -> bù lại thời gian tạm dừng trước khi mở câu hỏi
+      if (forceQuestions && !effectiveAttempt.introducedParts.includes(targetPart.partNumber)) {
+        await attemptApi.confirmPartIntroduction(
+          effectiveAttempt.id,
+          targetPart.partNumber,
+          qId,
+        )
+      }
+
+      const nextIntroduced = forceQuestions
+        ? Array.from(new Set([...effectiveAttempt.introducedParts, targetPart.partNumber]))
+        : effectiveAttempt.introducedParts
+
+      const hasSeenIntro = nextIntroduced.includes(targetPart.partNumber)
+      const nextStage: TestAttempt['currentStage'] = hasSeenIntro ? 'questions' : 'part_intro'
 
       setSelectedGroupId(targetGroup.id)
       setSelectedQuestionId(qId)
 
       const updated = await attemptApi.saveAttemptProgress(effectiveAttempt.id, {
+        introducedParts: nextIntroduced,
         currentPartNumber: targetPart.partNumber,
         currentStage: nextStage,
         currentQuestionId: qId,
         listeningCompleted: effectiveAttempt.listeningCompleted,
-        listeningJustCompletedNotice: withListeningDoneNotice,
+        listeningJustCompletedNotice: Boolean(options?.withListeningDoneNotice),
       })
       setLocalAttempt(updated)
     },
     [attempt],
   )
 
-  // Khi nhấn "Bắt đầu Part" ở màn hình giới thiệu Part
   const handleConfirmPartIntro = async () => {
     if (!attempt || !currentPart) return
     const firstGroup = currentPart.questionGroups[0]
@@ -254,7 +291,6 @@ export default function TestTakingPage() {
     setLocalAttempt(updated)
   }
 
-  // Ghi nhận đáp án học viên chọn
   const handleSelectAnswer = async (questionId: string, optionId: string) => {
     if (!attempt || attempt.status !== 'in_progress') return
     const nextAnswers = {
@@ -269,7 +305,6 @@ export default function TestTakingPage() {
     setLocalAttempt(updated)
   }
 
-  // Đánh dấu / bỏ đánh dấu câu cần xem lại
   const handleToggleFlag = async (questionId: string) => {
     if (!attempt || attempt.status !== 'in_progress') return
     const exists = attempt.flaggedQuestionIds.includes(questionId)
@@ -283,7 +318,6 @@ export default function TestTakingPage() {
     setLocalAttempt(updated)
   }
 
-  // Khi 1 nhóm audio Listening bắt đầu phát
   const handleAudioPlayStarted = useCallback(
     async (audioGroupId: string) => {
       if (!attempt) return
@@ -293,7 +327,6 @@ export default function TestTakingPage() {
     [attempt],
   )
 
-  // Tìm vị trí bước hiện tại trong examSteps
   const currentStepIndex = useMemo(() => {
     if (!currentGroup) return 0
     const byQuestion = examSteps.findIndex(
@@ -310,8 +343,25 @@ export default function TestTakingPage() {
 
   const currentStep = examSteps[currentStepIndex]
 
-  // Chỉ cuộn về đầu trang khi thực sự chuyển Bước làm bài (chuyển cụm câu hỏi / chuyển câu đơn), chuyển Part hoặc chuyển màn hình giới thiệu.
-  // Tuyệt đối KHÔNG cuộn lên đầu trang khi học viên đang bấm chọn đáp án của các câu thứ 2, thứ 3 bên dưới trong cùng một cụm câu hỏi.
+  // Giữ tham chiếu mới nhất để callback kết thúc âm thanh luôn lấy đúng vị trí bước hiện tại (không bị stale closure khi học viên vừa bấm chọn đáp án)
+  const stepContextRef = useRef({
+    attempt,
+    currentPart,
+    currentGroup,
+    currentStepIndex,
+    examSteps,
+  })
+  useEffect(() => {
+    stepContextRef.current = {
+      attempt,
+      currentPart,
+      currentGroup,
+      currentStepIndex,
+      examSteps,
+    }
+  }, [attempt, currentPart, currentGroup, currentStepIndex, examSteps])
+
+  // Cuộn về đầu trang khi chuyển bước làm bài / chuyển cụm câu / chuyển Part (không cuộn khi chọn đáp án câu dưới trong cùng cụm)
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior })
   }, [
@@ -321,65 +371,99 @@ export default function TestTakingPage() {
     currentStepIndex,
   ])
 
-  // Khi 1 nhóm audio Listening phát xong -> Khóa vĩnh viễn nhóm audio đó & tự động chuyển theo trình tự đề thi
-  const handleAudioPlayCompleted = async (audioGroupId: string) => {
-    if (!attempt || !currentPart || !currentGroup) return
-    const updated = await attemptApi.updateAudioStatus(attempt.id, audioGroupId, 'LOCKED')
-    if (!updated) return
-    setLocalAttempt(updated)
+  // Ngay khi âm thanh của câu/cụm câu Listening phát xong -> Khóa lượt nghe đó và TỰ ĐỘNG chuyển luôn sang câu/cụm tiếp theo
+  const handleAudioPlayCompleted = useCallback(
+    async (audioGroupId: string) => {
+      const {
+        attempt: latestAttempt,
+        currentPart: latestPart,
+        currentStepIndex: latestIdx,
+        examSteps: latestSteps,
+      } = stepContextRef.current
 
-    const nextStep = examSteps[currentStepIndex + 1]
-    if (!nextStep) {
-      if (updated.listeningCompleted) {
-        setSubmitModalOpen(true)
+      if (!latestAttempt || !latestPart) return
+      const updated = await attemptApi.updateAudioStatus(
+        latestAttempt.id,
+        audioGroupId,
+        'LOCKED',
+      )
+      if (!updated) return
+      setLocalAttempt(updated)
+
+      const nextStep = latestSteps[latestIdx + 1]
+      if (!nextStep) {
+        if (updated.listeningCompleted) {
+          setSubmitModalOpen(true)
+        }
+        return
       }
-      return
+
+      const isTransitionToReading =
+        latestPart.section === 'listening' && nextStep.part.section === 'reading'
+
+      await moveToPartAndGroup(
+        nextStep.part,
+        nextStep.group,
+        nextStep.firstQuestionId,
+        {
+          withListeningDoneNotice: isTransitionToReading,
+          overrideAttempt: updated,
+        },
+      )
+    },
+    [moveToPartAndGroup],
+  )
+
+  const isListeningSection = currentPart?.section === 'listening'
+
+  // Kiểm tra bước hiện tại có file âm thanh hay bị khuyết âm thanh:
+  // Nếu là Part 1–4 có âm thanh -> tự chuyển câu khi hết âm thanh (ẩn nút CÂU TIẾP).
+  // Nếu câu ở Part 1–4 bị bỏ trống/khuyết âm thanh -> tự hiện nút CÂU TIẾP để không bao giờ kẹt bài thi.
+  const currentStepAudioKey = useMemo(() => {
+    if (!currentGroup) return ''
+    const gMedia = normalizeGroupMedia(currentGroup)
+    if (currentStep?.singleQuestion) {
+      const qMedia = normalizeQuestionMedia(currentStep.singleQuestion)
+      if (qMedia.audios.length > 0 && gMedia.audios.length === 0) {
+        return currentStep.singleQuestion.id
+      }
+      if (gMedia.audios.length > 0) {
+        return currentGroup.audioGroupId ?? currentGroup.id
+      }
+      return ''
     }
+    return gMedia.audios.length > 0 ? (currentGroup.audioGroupId ?? currentGroup.id) : ''
+  }, [currentGroup, currentStep])
 
-    const isTransitionToReading =
-      currentPart.section === 'listening' && nextStep.part.section === 'reading'
+  const isListeningWithAudio = isListeningSection && Boolean(currentStepAudioKey)
 
-    await moveToPartAndGroup(
-      nextStep.part,
-      nextStep.group,
-      nextStep.firstQuestionId,
-      isTransitionToReading,
-      updated,
-    )
-  }
-
+  // Ở phần Reading (Part 5, 6, 7): cho phép chuyển qua lại tự do giữa các câu và các cụm câu thuộc Reading (nhưng không lùi ngược vào Listening)
   const canGoPrevStep = useMemo(() => {
-    if (!attempt || currentStepIndex <= 0) return false
+    if (!attempt || isListeningSection || currentStepIndex <= 0) return false
     const prevStep = examSteps[currentStepIndex - 1]
     if (!prevStep) return false
-    if (!attempt.listeningCompleted && prevStep.part.section === 'listening') {
-      return false
-    }
-    return true
-  }, [attempt, currentStepIndex, examSteps])
+    return prevStep.part.section === 'reading'
+  }, [attempt, isListeningSection, currentStepIndex, examSteps])
 
   const canGoNextStep = useMemo(() => {
-    if (!attempt || currentStepIndex >= examSteps.length - 1) return false
-    const nextStep = examSteps[currentStepIndex + 1]
-    if (!nextStep) return false
-    if (nextStep.part.section === 'reading' && !attempt.listeningCompleted) {
+    if (!attempt || isListeningWithAudio || currentStepIndex >= examSteps.length - 1) {
       return false
     }
-    if (currentPart?.section === 'listening' && currentGroup && !attempt.listeningCompleted) {
-      const audioKey = currentGroup.audioGroupId ?? currentGroup.id
-      const audioStatus = attempt.audioStates[audioKey]?.status
-      if (audioStatus && audioStatus !== 'LOCKED' && audioStatus !== 'COMPLETED') {
-        return false
-      }
+    const nextStep = examSteps[currentStepIndex + 1]
+    if (!nextStep) return false
+    if (isListeningSection) {
+      return true
     }
-    return true
-  }, [attempt, currentStepIndex, examSteps, currentPart, currentGroup])
+    return nextStep.part.section === 'reading'
+  }, [attempt, isListeningSection, isListeningWithAudio, currentStepIndex, examSteps])
 
   const handleGoPrevStep = () => {
     if (!canGoPrevStep) return
     const prev = examSteps[currentStepIndex - 1]
     if (prev) {
-      void moveToPartAndGroup(prev.part, prev.group, prev.firstQuestionId)
+      void moveToPartAndGroup(prev.part, prev.group, prev.firstQuestionId, {
+        skipIntroIfReading: true,
+      })
     }
   }
 
@@ -396,21 +480,51 @@ export default function TestTakingPage() {
     groupId: string,
     questionId: string,
   ) => {
+    if (!attempt) return
     const targetPart = activeParts.find((p) => p.partNumber === partNumber)
     const targetGroup = targetPart?.questionGroups.find((g) => g.id === groupId)
     if (!targetPart || !targetGroup) return
-    setNavDrawerOpen(false)
-    const isSameMultiQuestionGroup =
-      currentGroup?.id === targetGroup.id &&
-      targetGroup.stimulus.length > 0 &&
-      targetGroup.questions.length > 1
-    void moveToPartAndGroup(targetPart, targetGroup, questionId)
-    if (isSameMultiQuestionGroup) {
+
+    // Trong phần Listening: chỉ cho phép cuộn giữa các câu nằm trong ĐÚNG cụm đang phát hiện tại (Part 3, 4), cấm chuyển sang câu khác hoặc Part khác
+    if (targetPart.section === 'listening') {
+      const isSameActiveListeningGroup =
+        !attempt.listeningCompleted &&
+        attempt.currentStage === 'questions' &&
+        currentPart?.partNumber === targetPart.partNumber &&
+        currentGroup?.id === targetGroup.id
+
+      if (!isSameActiveListeningGroup) {
+        return
+      }
+
+      setNavDrawerOpen(false)
+      setSelectedQuestionId(questionId)
       window.setTimeout(() => {
         const el = document.getElementById(`test-question-${questionId}`)
         el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       }, 40)
+      return
     }
+
+    // Chặn nhảy vào Reading nếu chưa hoàn thành Listening
+    if (!attempt.listeningCompleted) {
+      return
+    }
+
+    // Phần Reading (Part 5, 6, 7): cho phép nhảy tự do tới bất kỳ câu đơn hoặc cụm câu nào
+    setNavDrawerOpen(false)
+    const isMultiQuestionGroup = isMultiQuestionSharedGroup(targetGroup)
+
+    void moveToPartAndGroup(targetPart, targetGroup, questionId, {
+      skipIntroIfReading: true,
+    }).then(() => {
+      if (isMultiQuestionGroup) {
+        window.setTimeout(() => {
+          const el = document.getElementById(`test-question-${questionId}`)
+          el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }, 60)
+      }
+    })
   }
 
   const handleConfirmSubmit = async () => {
@@ -482,15 +596,15 @@ export default function TestTakingPage() {
 
   const currentPartOrderIdx =
     activeParts.findIndex((p) => p.partNumber === currentPart.partNumber) + 1
-  const currentAudioKey = currentGroup ? currentGroup.audioGroupId ?? currentGroup.id : ''
-  const currentAudioState = currentAudioKey ? attempt.audioStates[currentAudioKey] : undefined
+  const currentAudioState = currentStepAudioKey
+    ? attempt.audioStates[currentStepAudioKey]
+    : undefined
 
   return (
     <div className="ec-reading-font min-h-screen bg-[#F5FAFE] pb-16">
       {/* Thanh thông tin cố định phía trên cùng của phòng thi */}
       <div className="sticky top-0 z-30 border-b border-[#DCEAF3] bg-[#75BDEB] text-white shadow-sm">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 lg:px-6">
-          {/* Nút thoát có xác nhận & Tên đề thi */}
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -511,7 +625,6 @@ export default function TestTakingPage() {
             </div>
           </div>
 
-          {/* Góc phải: NỘP BÀI + Đồng hồ + Nút mở Bảng điều hướng câu hỏi thu gọn trên góc */}
           <div className="flex items-center gap-2.5 sm:gap-3">
             <button
               type="button"
@@ -523,7 +636,10 @@ export default function TestTakingPage() {
 
             <TestTimer timer={timer} />
 
-            {/* Nút biểu tượng lưới ở góc phải trên cùng: bấm vào mới mở các câu hỏi ra */}
+            <span className="hidden text-sm font-bold text-white ec-shadow-text md:inline">
+              {user?.fullName ?? 'Học viên'}
+            </span>
+
             <button
               type="button"
               onClick={() => setNavDrawerOpen((v) => !v)}
@@ -532,7 +648,7 @@ export default function TestTakingPage() {
               className={`flex h-9 w-9 items-center justify-center rounded-lg transition ${
                 navDrawerOpen
                   ? 'bg-[#F26522] text-white shadow-sm'
-                  : 'bg-[#2878B8] text-white hover:bg-[#1f5f94]'
+                  : 'bg-white/25 text-white hover:bg-white/35'
               }`}
             >
               <LayoutGrid className="h-5 w-5" />
@@ -541,38 +657,43 @@ export default function TestTakingPage() {
         </div>
       </div>
 
-      {/* Bảng điều hướng câu hỏi thu gọn: chỉ mở ra từ góc phải trên cùng khi học viên nhấn nút */}
+      {/* Ngăn danh sách câu hỏi trượt bên trái */}
       {navDrawerOpen && (
         <div
-          className="fixed inset-0 z-40 bg-slate-900/25 backdrop-blur-[1px]"
+          className="fixed inset-0 z-40 bg-slate-900/25"
           onClick={(e) => {
             if (e.target === e.currentTarget) setNavDrawerOpen(false)
           }}
         >
-          <div className="fixed right-4 top-16 z-50 w-[calc(100vw-2rem)] max-w-sm">
-            <div className="relative">
+          <aside className="fixed bottom-0 left-0 top-0 z-50 w-[280px] overflow-y-auto border-r border-[#DCEAF3] bg-[#F4F5F7] p-4 shadow-2xl sm:w-[300px]">
+            <div className="mb-3 flex items-center justify-between border-b border-[#DCEAF3] pb-2.5">
+              <span className="text-xs font-extrabold uppercase tracking-wider text-[#243B53]">
+                Danh sách câu hỏi ({answeredCount}/{totalQuestions})
+              </span>
               <button
                 type="button"
                 onClick={() => setNavDrawerOpen(false)}
                 aria-label="Đóng bảng câu hỏi"
-                className="absolute right-3 top-3 z-10 flex h-7 w-7 items-center justify-center rounded-lg bg-[#F5FAFE] text-[#718096] transition hover:bg-[#EAF6FD] hover:text-[#243B53]"
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-[#718096] transition hover:bg-[#EAF6FD] hover:text-[#243B53]"
               >
                 <X className="h-4 w-4" />
               </button>
-
-              <QuestionNavigator
-                activeParts={activeParts}
-                currentPartNumber={currentPart.partNumber}
-                activeQuestionId={activeQuestionId}
-                answers={attempt.answers}
-                flaggedQuestionIds={attempt.flaggedQuestionIds}
-                audioStates={attempt.audioStates}
-                listeningCompleted={attempt.listeningCompleted}
-                mode="exam"
-                onJumpToQuestion={handleJumpToQuestion}
-              />
             </div>
-          </div>
+
+            <QuestionNavigator
+              activeParts={activeParts}
+              currentPartNumber={currentPart.partNumber}
+              currentGroupId={currentGroup?.id}
+              currentStage={attempt.currentStage}
+              activeQuestionId={activeQuestionId}
+              answers={attempt.answers}
+              flaggedQuestionIds={attempt.flaggedQuestionIds}
+              audioStates={attempt.audioStates}
+              listeningCompleted={attempt.listeningCompleted}
+              mode="exam"
+              onJumpToQuestion={handleJumpToQuestion}
+            />
+          </aside>
         </div>
       )}
 
@@ -585,11 +706,13 @@ export default function TestTakingPage() {
             totalSelectedParts={activeParts.length}
             formattedRemainingTime={timer.formattedTime}
             listeningJustCompletedNotice={attempt.listeningJustCompletedNotice}
+            answeredCount={answeredCount}
+            totalQuestions={totalQuestions}
+            onOpenNav={() => setNavDrawerOpen(true)}
             onStartPart={handleConfirmPartIntro}
           />
         ) : (
           <div className="flex flex-col gap-5">
-            {/* Khung trắng có thanh điều khiển chuyển câu đặt ngay phía trên câu hỏi */}
             <div className="rounded-xl border border-[#DCEAF3] bg-white p-5 shadow-xs sm:p-6">
               <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-[#EAF6FD] pb-3.5">
                 <div className="flex flex-wrap items-center gap-2.5">
@@ -598,93 +721,98 @@ export default function TestTakingPage() {
                   </h2>
 
                   {currentStep && (
-                    <span className="rounded-lg bg-[#EAF6FD] px-3 py-1 text-xs font-extrabold text-[#2878B8]">
+                    <span className="rounded-lg bg-[#EAF6FD] px-3 py-1 text-xs font-extrabold tabular-nums text-[#2878B8]">
                       {currentStep.stepLabel}
                     </span>
                   )}
 
-                  {/* Các nút chuyển Part nhỏ gọn */}
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    {activeParts.map((part) => {
-                      const isCurrentPart = part.partNumber === currentPart.partNumber
-                      const isReadingLocked =
-                        part.section === 'reading' && !attempt.listeningCompleted
-                      const isUnreachedListeningPart =
-                        !attempt.listeningCompleted &&
-                        part.section === 'listening' &&
-                        !attempt.introducedParts.includes(part.partNumber) &&
-                        !isCurrentPart
-                      const isDisabled = isReadingLocked || isUnreachedListeningPart
+                  {/* Thanh chọn nhanh Part: chỉ cho bấm chuyển qua lại giữa các Part Đọc (P5, P6, P7) sau khi đã xong phần Nghe */}
+                  {!isListeningSection && (
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {activeParts.map((part) => {
+                        const isCurrentPart = part.partNumber === currentPart.partNumber
+                        const isLockedPart = part.section === 'listening'
 
-                      return (
-                        <button
-                          key={part.id}
-                          type="button"
-                          disabled={isDisabled}
-                          onClick={() => {
-                            const firstGroup = part.questionGroups[0]
-                            if (firstGroup) {
-                              void moveToPartAndGroup(
-                                part,
-                                firstGroup,
-                                firstGroup.questions[0]?.id,
-                              )
-                            }
-                          }}
-                          className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-extrabold transition ${
-                            isCurrentPart
-                              ? 'bg-[#2878B8] text-white'
-                              : isDisabled
-                                ? 'cursor-not-allowed bg-slate-100 text-slate-400'
-                                : 'bg-[#EAF6FD] text-[#2878B8] hover:bg-[#75BDEB] hover:text-white'
-                          }`}
-                        >
-                          {isReadingLocked && <Lock className="h-3 w-3" />}
-                          <span>P{part.partNumber}</span>
-                        </button>
-                      )
-                    })}
-                  </div>
+                        return (
+                          <button
+                            key={part.id}
+                            type="button"
+                            disabled={isLockedPart}
+                            onClick={() => {
+                              if (isLockedPart) return
+                              const firstGroup = part.questionGroups[0]
+                              if (firstGroup) {
+                                void moveToPartAndGroup(
+                                  part,
+                                  firstGroup,
+                                  firstGroup.questions[0]?.id,
+                                  { skipIntroIfReading: true },
+                                )
+                              }
+                            }}
+                            className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-extrabold transition ${
+                              isCurrentPart
+                                ? 'bg-[#75BDEB] text-white'
+                                : isLockedPart
+                                  ? 'cursor-not-allowed bg-slate-100 text-slate-400'
+                                  : 'bg-[#EAF6FD] text-[#2878B8] hover:bg-[#75BDEB] hover:text-white'
+                            }`}
+                          >
+                            {isLockedPart && <Lock className="h-3 w-3" />}
+                            <span>P{part.partNumber}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
                 </div>
 
-                {/* Thanh chuyển CÂU TRƯỚC / CÂU TIẾP đặt ngay phía trên cùng bên phải + Ô cam tiến độ 0/N */}
+                {/* Cụm điều hướng bên phải:
+                    - Nếu đang làm Part 1–4 (Listening): KHÔNG hiện nút CÂU TRƯỚC / CÂU TIẾP (hết âm thanh tự chuyển câu luôn).
+                    - Nếu đang làm Part 5–7 (Reading): hiện đầy đủ nút CÂU TRƯỚC / CÂU TIẾP để chuyển tự do giữa các câu và cụm câu. */}
                 <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    disabled={!canGoPrevStep}
-                    onClick={handleGoPrevStep}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-[#DCEAF3] bg-[#F5FAFE] px-3.5 py-2 text-xs font-extrabold uppercase text-[#243B53] transition hover:border-[#75BDEB] hover:bg-[#EAF6FD] disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    <ArrowLeft className="h-3.5 w-3.5" />
-                    <span>CÂU TRƯỚC</span>
-                  </button>
+                  {!isListeningWithAudio && (
+                    <>
+                      {!isListeningSection && (
+                        <button
+                          type="button"
+                          disabled={!canGoPrevStep}
+                          onClick={handleGoPrevStep}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-[#DCEAF3] bg-[#F5FAFE] px-3.5 py-2 text-xs font-extrabold uppercase text-[#243B53] transition hover:border-[#75BDEB] hover:bg-[#EAF6FD] disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          <ArrowLeft className="h-3.5 w-3.5" />
+                          <span>CÂU TRƯỚC</span>
+                        </button>
+                      )}
 
-                  {currentStepIndex < examSteps.length - 1 ? (
-                    <button
-                      type="button"
-                      disabled={!canGoNextStep}
-                      onClick={handleGoNextStep}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-[#2878B8] px-4 py-2 text-xs font-extrabold uppercase text-white shadow-2xs transition hover:bg-[#1e639c] disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      <span>CÂU TIẾP</span>
-                      <ArrowRight className="h-3.5 w-3.5" />
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setSubmitModalOpen(true)}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-[#F26522] px-4 py-2 text-xs font-black uppercase text-white shadow-xs transition hover:bg-[#d95314]"
-                    >
-                      <Send className="h-3.5 w-3.5" />
-                      <span>NỘP BÀI</span>
-                    </button>
+                      {currentStepIndex < examSteps.length - 1 ? (
+                        <button
+                          type="button"
+                          disabled={!canGoNextStep}
+                          onClick={handleGoNextStep}
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-[#75BDEB] px-4 py-2 text-xs font-extrabold uppercase text-white shadow-2xs transition hover:bg-[#5aaee3] disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          <span>CÂU TIẾP</span>
+                          <ArrowRight className="h-3.5 w-3.5" />
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setSubmitModalOpen(true)}
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-[#F26522] px-4 py-2 text-xs font-black uppercase text-white shadow-xs transition hover:bg-[#d95314]"
+                        >
+                          <Send className="h-3.5 w-3.5" />
+                          <span>NỘP BÀI</span>
+                        </button>
+                      )}
+                    </>
                   )}
 
                   <button
                     type="button"
                     onClick={() => setNavDrawerOpen(true)}
                     title="Mở bảng danh sách câu hỏi"
-                    className="rounded-lg bg-[#F26522] px-4 py-2 text-xs font-black text-white shadow-xs transition hover:bg-[#d95314] sm:text-sm"
+                    className="rounded-lg bg-[#F26522] px-4 py-2 text-xs font-black tabular-nums text-white shadow-xs transition hover:bg-[#d95314] sm:text-sm"
                   >
                     {answeredCount}/{totalQuestions}
                   </button>
@@ -712,7 +840,12 @@ export default function TestTakingPage() {
         )}
       </div>
 
-      {/* Modal xác nhận nộp bài thi */}
+      {/* Thanh hỗ trợ cố định dưới chân trang */}
+      <div className="fixed inset-x-0 bottom-0 z-20 bg-[#E53E3E] px-4 py-1.5 text-center text-xs font-medium text-white">
+        Khi có vấn đề hoặc thắc mắc về bài test online, hãy giữ nguyên màn hình và liên hệ Hotline{' '}
+        {centerInfo.hotline} để được hỗ trợ.
+      </div>
+
       <TestSubmitModal
         open={submitModalOpen}
         examName={test.title}
@@ -733,7 +866,6 @@ export default function TestTakingPage() {
         onConfirmSubmit={handleConfirmSubmit}
       />
 
-      {/* Modal xác nhận khi đang làm bài dở mà bấm thoát ra ngoài */}
       <ExitExamConfirmModal
         open={exitModalOpen || blocker.state === 'blocked'}
         title="Xác nhận rời khỏi phòng thi"

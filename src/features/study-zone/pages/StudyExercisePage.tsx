@@ -2,16 +2,15 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useBlocker, useNavigate, useParams } from 'react-router-dom'
 import {
   ArrowLeft,
-  ArrowRight,
-  CheckCircle2,
   CircleAlert,
-  Clock,
+  CircleArrowLeft,
+  CircleArrowRight,
   LayoutGrid,
-  RotateCcw,
   X,
 } from 'lucide-react'
 import { EmptyBlock, ErrorBlock, LoadingBlock } from '@/components/ui/StateViews'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { useAuth } from '@/features/auth/hooks/useAuth'
 import { studyZoneApi } from '@/features/study-zone/api/studyZoneApi'
 import { useStudyExercise } from '@/features/study-zone/hooks/useStudyZone'
 import QuestionRenderer from '@/features/study-zone/components/QuestionRenderer'
@@ -20,27 +19,18 @@ import SubmissionModal from '@/features/study-zone/components/SubmissionModal'
 import ExerciseResultBanner from '@/features/study-zone/components/ExerciseResultBanner'
 import ExitExamConfirmModal from '@/features/test-online/components/ExitExamConfirmModal'
 import {
-  STUDY_CATEGORY_LABELS,
   STUDY_CATEGORY_PATHS,
   type ExerciseAttemptResult,
 } from '@/features/study-zone/types'
 
-function formatTimer(seconds: number): string {
-  const m = Math.floor(seconds / 60)
-  const s = seconds % 60
-  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
-}
-
 /**
- * Trang Làm bài & Xem kết quả bài tập trắc nghiệm đa phương tiện (/study-zone/practice/:exerciseId).
- * - Độc lập toàn màn hình (không có Header & Footer website).
- * - Tự động cuộn lên đầu trang khi mở bài tập hoặc khi chuyển câu hỏi.
- * - Chuyển từng câu 1 với nút CÂU TRƯỚC / CÂU TIẾP đặt ngay phía trên câu hỏi.
- * - Có hộp thoại xác nhận khi đang làm bài dở mà bấm thoát ra ngoài.
+ * Trang Làm bài tập trắc nghiệm Study Zone (/study-zone/practice/:exerciseId)
+ * Thiết kế đồng bộ theo ảnh mẫu 2 với bảng màu xanh dương nhạt English Center (#75BDEB).
  */
 export default function StudyExercisePage() {
   const { exerciseId = '' } = useParams()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const { data: exercise, loading, error, retry } = useStudyExercise(exerciseId)
 
   usePageTitle(exercise ? `${exercise.title} – ${exercise.subtitle}` : 'Làm bài tập Study Zone')
@@ -55,7 +45,6 @@ export default function StudyExercisePage() {
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [navDrawerOpen, setNavDrawerOpen] = useState(false)
 
-  // Dùng useRef để cờ cho phép thoát có hiệu lực tức thì trước khi navigate() kích hoạt useBlocker (tránh phải bấm Thoát 2 lần)
   const allowLeaveRef = useRef(false)
 
   const [attemptHistory, setAttemptHistory] = useState<ExerciseAttemptResult[]>([])
@@ -88,12 +77,10 @@ export default function StudyExercisePage() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
   }, [isDoingExercise])
 
-  // Luôn cuộn lên đầu trang khi mở trang bài tập hoặc khi chuyển câu
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior })
   }, [exerciseId, currentIndex, isSubmitted])
 
-  // Bộ đếm thời gian khi đang làm bài
   useEffect(() => {
     if (!exercise || isSubmitted) return
     const interval = window.setInterval(() => {
@@ -132,7 +119,7 @@ export default function StudyExercisePage() {
             action={
               <Link
                 to="/study-zone/grammar"
-                className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-[#2878B8] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#1f5f94]"
+                className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-[#75BDEB] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#5aaee3]"
               >
                 <ArrowLeft className="h-4 w-4" /> Về Study Zone
               </Link>
@@ -148,9 +135,6 @@ export default function StudyExercisePage() {
   const safeIndex = Math.min(Math.max(0, currentIndex), totalQuestions - 1)
   const currentQuestion = questions[safeIndex]
   const answeredCount = Object.keys(answers).length
-
-  const totalAllowedSeconds = (exercise.durationMinutes ?? 10) * 60
-  const remainingSeconds = Math.max(0, totalAllowedSeconds - elapsedSeconds)
 
   const topicPath = `${STUDY_CATEGORY_PATHS[exercise.category]}/${exercise.topicSlug}`
 
@@ -224,139 +208,85 @@ export default function StudyExercisePage() {
     ? (currentReview?.selectedOptionId ?? null)
     : (answers[currentQuestion.id] ?? null)
 
+  const displayTitle =
+    exercise.title.toUpperCase().startsWith('TEST')
+      ? `Test ${exercise.title.replace(/test\s*/i, '')}`
+      : exercise.title
+
   return (
-    <div className="ec-reading-font min-h-screen bg-[#F5FAFE] pb-16">
-      {/* Thanh điều khiển cố định trên cùng của phòng làm bài tập */}
-      <div className="sticky top-0 z-30 border-b border-[#DCEAF3] bg-white/95 shadow-xs backdrop-blur-xs">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 lg:px-6">
-          {/* Thông tin bài tập & Nút quay lại (có xác nhận khi đang làm dở) */}
-          <div className="flex items-center gap-3">
+    <div className="ec-reading-font min-h-screen bg-[#F4F6F8] pb-16">
+      {/* Thanh Topbar màu xanh dương nhạt English Center */}
+      <div className="sticky top-0 z-30 border-b border-[#DCEAF3] bg-[#75BDEB] text-white shadow-sm">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2.5 px-3 py-2.5 sm:gap-3 sm:px-4 sm:py-3 lg:px-6">
+          {/* Bên trái: Nút quay lại + Logo thương hiệu English Center */}
+          <div className="flex items-center gap-2.5 sm:gap-3">
             <button
               type="button"
               onClick={handleRequestExit}
-              title="Quay về bài học"
-              className="inline-flex items-center gap-1.5 rounded-xl border border-[#DCEAF3] bg-[#F5FAFE] px-3 py-2 text-xs font-extrabold text-[#243B53] transition hover:border-[#2878B8] hover:text-[#2878B8]"
+              title="Quay về danh sách bài học"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/40 bg-white/15 text-white transition hover:bg-white/25"
             >
               <ArrowLeft className="h-4 w-4" />
-              <span className="hidden sm:inline">Bài học</span>
             </button>
 
-            <div>
-              <span className="block text-[11px] font-extrabold uppercase tracking-wider text-[#2878B8]">
-                {STUDY_CATEGORY_LABELS[exercise.category]} • {exercise.level}
+            <div className="flex flex-col leading-none select-none">
+              <span className="text-base font-black uppercase tracking-tight text-white ec-shadow-text sm:text-xl">
+                <span className="text-[#F26522]">E</span>NGLISH CENTER
               </span>
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-base font-black uppercase text-[#243B53] sm:text-lg">
-                  {exercise.title}
-                </h1>
-                <span className="hidden rounded-md border border-[#DCEAF3] bg-[#F5FAFE] px-2.5 py-0.5 text-xs font-semibold text-[#718096] md:inline">
-                  {exercise.subtitle}
-                </span>
-              </div>
+              <span className="mt-0.5 text-[9px] font-bold uppercase tracking-wider text-white/95">
+                STUDY ZONE – LUYỆN TẬP TOEIC
+              </span>
             </div>
           </div>
 
-          {/* Góc phải: Làm lại + Nộp bài + Đồng hồ + Nút mở Bảng điều hướng câu hỏi thu gọn */}
-          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+          {/* Bên phải: LÀM LẠI (cam) + NỘP BÀI (cam) + Tên học viên + Nút lưới câu hỏi */}
+          <div className="flex items-center gap-2.5 sm:gap-3.5">
             <button
               type="button"
               onClick={handleStartNewAttempt}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-[#2878B8] bg-white px-3.5 py-2 text-xs font-extrabold uppercase tracking-wider text-[#2878B8] transition hover:bg-[#EAF6FD]"
+              className="rounded-lg bg-[#F26522] px-4 py-2 text-xs font-extrabold uppercase tracking-wide text-white shadow-2xs transition hover:bg-[#d95314] sm:px-5"
             >
-              <RotateCcw className="h-3.5 w-3.5" />
-              <span>Làm lại</span>
+              LÀM LẠI
             </button>
 
-            {!isSubmitted ? (
+            {!isSubmitted && (
               <button
                 type="button"
                 onClick={() => setConfirmOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-[#F26522] px-4 py-2 text-xs font-black uppercase tracking-wider text-white shadow-xs transition hover:bg-[#d95314]"
+                className="rounded-lg bg-[#F26522] px-4 py-2 text-xs font-extrabold uppercase tracking-wide text-white shadow-2xs transition hover:bg-[#d95314] sm:px-5"
               >
-                <CheckCircle2 className="h-4 w-4" />
-                <span>Nộp bài</span>
+                NỘP BÀI
               </button>
-            ) : (
-              <span className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-extrabold uppercase tracking-wider text-white">
-                <CheckCircle2 className="h-4 w-4" />
-                <span>Đã nộp</span>
-              </span>
             )}
 
-            {!isSubmitted && (
-              <div className="inline-flex items-center gap-1.5 rounded-xl border border-[#75BDEB] bg-[#EAF6FD] px-3.5 py-2 font-mono text-xs font-black text-[#2878B8] sm:text-sm">
-                <Clock className="h-4 w-4" />
-                <span>{formatTimer(remainingSeconds)}</span>
-              </div>
-            )}
+            <span className="hidden text-sm font-semibold text-white ec-shadow-text sm:inline">
+              {user?.fullName ?? 'Học viên'}
+            </span>
 
-            {/* Nút mở Bảng điều hướng câu hỏi thu gọn trên góc */}
             <button
               type="button"
               onClick={() => setNavDrawerOpen((v) => !v)}
-              title="Mở bảng danh sách câu hỏi"
+              title="Mở danh sách câu hỏi"
               aria-expanded={navDrawerOpen}
-              className={`inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-black transition ${
-                navDrawerOpen
-                  ? 'border-[#2878B8] bg-[#2878B8] text-white'
-                  : 'border-[#75BDEB] bg-[#EAF6FD] text-[#2878B8] hover:bg-[#75BDEB] hover:text-white'
-              }`}
+              className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/25 text-white transition hover:bg-white/35"
             >
-              <LayoutGrid className="h-4 w-4" />
-              <span>
-                {isSubmitted
-                  ? `${activeResult?.correctCount}/${totalQuestions}`
-                  : `${answeredCount}/${totalQuestions}`}
-              </span>
+              <LayoutGrid className="h-5 w-5" />
             </button>
-          </div>
-        </div>
-
-        {/* Thanh phụ đặt ngay phía trên: Tiêu đề câu hiện tại + Nút CÂU TRƯỚC / CÂU TIẾP (chuyển từng câu 1) */}
-        <div className="border-t border-[#EAF6FD] bg-[#F5FAFE] px-4 py-2.5 lg:px-6">
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
-            <span className="text-xs font-extrabold uppercase tracking-wide text-[#243B53] sm:text-sm">
-              {exercise.title} • Câu {safeIndex + 1} / {totalQuestions}
-            </span>
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                disabled={safeIndex === 0}
-                onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-[#DCEAF3] bg-white px-3.5 py-1.5 text-xs font-extrabold uppercase text-[#243B53] transition hover:bg-[#EAF6FD] disabled:opacity-40"
-              >
-                <ArrowLeft className="h-3.5 w-3.5" />
-                <span>Câu trước</span>
-              </button>
-
-              <button
-                type="button"
-                disabled={safeIndex === totalQuestions - 1}
-                onClick={() => setCurrentIndex((i) => Math.min(totalQuestions - 1, i + 1))}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-[#2878B8] px-4 py-1.5 text-xs font-extrabold uppercase text-white transition hover:bg-[#1f5f94] disabled:opacity-40"
-              >
-                <span>Câu tiếp</span>
-                <ArrowRight className="h-3.5 w-3.5" />
-              </button>
-            </div>
           </div>
         </div>
       </div>
 
-      {/* Bảng điều hướng câu hỏi thu gọn trên góc phải (chỉ bung ra khi nhấn nút) */}
+      {/* Sidebar danh sách câu hỏi trượt bên trái giống ảnh mẫu 5 */}
       {navDrawerOpen && (
         <div
-          className="fixed inset-0 z-40 bg-slate-900/25 backdrop-blur-[1px]"
+          className="fixed inset-0 z-40 bg-slate-900/25"
           onClick={(e) => {
             if (e.target === e.currentTarget) setNavDrawerOpen(false)
           }}
         >
-          <div className="fixed right-4 top-16 z-50 w-[calc(100vw-2rem)] max-w-sm rounded-2xl border border-[#DCEAF3] bg-white p-5 shadow-2xl">
-            <div className="mb-3 flex items-center justify-between border-b border-[#EAF6FD] pb-2.5">
-              <span className="text-xs font-black uppercase tracking-wider text-[#243B53]">
-                Danh sách câu hỏi ({answeredCount}/{totalQuestions} đã chọn)
-              </span>
+          <aside className="fixed bottom-0 left-0 top-0 z-50 w-72 overflow-y-auto border-r border-[#DCEAF3] bg-[#F8FAFC] p-5 shadow-2xl">
+            <div className="mb-4 flex items-center justify-between border-b border-[#DCEAF3] pb-3">
+              <span className="text-sm font-bold text-[#243B53]">{displayTitle}</span>
               <button
                 type="button"
                 onClick={() => setNavDrawerOpen(false)}
@@ -376,11 +306,11 @@ export default function StudyExercisePage() {
                 setNavDrawerOpen(false)
               }}
             />
-          </div>
+          </aside>
         </div>
       )}
 
-      {/* Khu vực làm bài chính */}
+      {/* Khu vực khung trắng làm bài chính giống ảnh mẫu 2 */}
       <main className="mx-auto max-w-7xl px-4 pt-6 lg:px-6">
         {submitError && (
           <div
@@ -389,25 +319,6 @@ export default function StudyExercisePage() {
           >
             <CircleAlert className="h-5 w-5 shrink-0" />
             <span>{submitError}</span>
-          </div>
-        )}
-
-        {!isSubmitted && attemptHistory.length > 0 && (
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#A7D8F5] bg-[#EAF6FD] px-4 py-2.5 text-xs text-[#243B53]">
-            <span>
-              Bạn đang ở lượt làm bài mới. Kết quả lượt gần nhất:{' '}
-              <strong>
-                {attemptHistory[attemptHistory.length - 1].correctCount}/{totalQuestions} câu đúng (
-                {attemptHistory[attemptHistory.length - 1].accuracyPercent}%)
-              </strong>
-            </span>
-            <button
-              type="button"
-              onClick={() => setViewingAttemptIndex(attemptHistory.length - 1)}
-              className="font-extrabold text-[#2878B8] hover:underline"
-            >
-              Xem lại kết quả lượt trước
-            </button>
           </div>
         )}
 
@@ -424,20 +335,62 @@ export default function StudyExercisePage() {
           />
         )}
 
-        <QuestionRenderer
-          question={currentQuestion}
-          questionIndex={safeIndex}
-          totalQuestions={totalQuestions}
-          selectedOptionId={selectedForDisplay}
-          submitted={isSubmitted}
-          review={currentReview}
-          onSelectOption={handleSelectOption}
-        />
+        <div className="rounded-lg border border-[#DCEAF3] bg-white p-5 shadow-xs sm:p-7">
+          {/* Hàng điều khiển trên cùng: Test 1 (trái) | CÂU TRƯỚC - CÂU TIẾP (giữa) | 0/10 (cam bên phải) */}
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-4">
+            <h1 className="text-xl font-medium text-[#243B53] sm:text-2xl">
+              {displayTitle}
+            </h1>
+
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                disabled={safeIndex === 0}
+                onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
+                className="inline-flex items-center gap-2 rounded-md bg-[#94A9B9] px-4 py-2.5 text-xs font-bold uppercase text-white transition hover:bg-[#7e96a8] disabled:cursor-not-allowed disabled:opacity-65 sm:px-5"
+              >
+                <CircleArrowLeft className="h-4 w-4" />
+                <span>CÂU TRƯỚC</span>
+              </button>
+
+              <button
+                type="button"
+                disabled={safeIndex === totalQuestions - 1}
+                onClick={() => setCurrentIndex((i) => Math.min(totalQuestions - 1, i + 1))}
+                className="inline-flex items-center gap-2 rounded-md bg-[#75BDEB] px-4 py-2.5 text-xs font-bold uppercase text-white shadow-2xs transition hover:bg-[#5aaee3] disabled:cursor-not-allowed disabled:opacity-55 sm:px-5"
+              >
+                <span>CÂU TIẾP</span>
+                <CircleArrowRight className="h-4 w-4" />
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setNavDrawerOpen(true)}
+              title="Mở bảng câu hỏi"
+              className="min-w-[84px] rounded-md bg-[#F26522] px-5 py-2.5 text-center text-sm font-bold text-white shadow-2xs transition hover:bg-[#d95314]"
+            >
+              {isSubmitted
+                ? `${activeResult?.correctCount}/${totalQuestions}`
+                : `${answeredCount}/${totalQuestions}`}
+            </button>
+          </div>
+
+          <QuestionRenderer
+            question={currentQuestion}
+            questionIndex={safeIndex}
+            totalQuestions={totalQuestions}
+            selectedOptionId={selectedForDisplay}
+            submitted={isSubmitted}
+            review={currentReview}
+            onSelectOption={handleSelectOption}
+          />
+        </div>
       </main>
 
       <SubmissionModal
         open={confirmOpen}
-        exerciseTitle={`${exercise.title} · ${exercise.subtitle}`}
+        exerciseTitle={`${displayTitle} · ${exercise.subtitle}`}
         totalQuestions={totalQuestions}
         answeredCount={answeredCount}
         submitting={submitting}

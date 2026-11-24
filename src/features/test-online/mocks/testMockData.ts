@@ -58,67 +58,55 @@ function buildMockAudioWavDataUrl(frequencies: number[], stepMs = 450): string {
 }
 
 export const SAMPLE_SPEAKER_CHECK_AUDIO = buildMockAudioWavDataUrl([440, 554, 659, 880], 350)
-const AUDIO_PART1_Q1 = buildMockAudioWavDataUrl([392, 440, 494, 523, 587, 659], 500)
-const AUDIO_PART1_Q2 = buildMockAudioWavDataUrl([523, 494, 440, 392, 440, 523], 500)
-const AUDIO_PART2_Q3 = buildMockAudioWavDataUrl([440, 523, 587, 659, 587], 480)
-const AUDIO_PART2_Q4 = buildMockAudioWavDataUrl([349, 440, 523, 587, 698], 480)
-const AUDIO_PART3_GROUP1 = buildMockAudioWavDataUrl([440, 494, 523, 587, 659, 587, 523, 659], 520)
-const AUDIO_PART4_GROUP1 = buildMockAudioWavDataUrl([392, 440, 523, 587, 659, 784, 659], 520)
+const AUDIO_PART1_Q1 = buildMockAudioWavDataUrl([392, 440, 494, 523, 587, 659, 587, 523, 494, 523], 500)
+const AUDIO_PART1_Q2 = buildMockAudioWavDataUrl([523, 494, 440, 392, 440, 523, 587, 523, 440, 523], 500)
+const AUDIO_PART2_Q3 = buildMockAudioWavDataUrl([440, 523, 587, 659, 587, 523, 440, 523, 587, 659], 500)
+const AUDIO_PART2_Q4 = buildMockAudioWavDataUrl([349, 440, 523, 587, 698, 587, 523, 440, 523, 587], 500)
+const AUDIO_PART3_GROUP1 = buildMockAudioWavDataUrl(
+  [440, 494, 523, 587, 659, 587, 523, 659, 587, 523, 494, 523, 587, 659],
+  520,
+)
+const AUDIO_PART4_GROUP1 = buildMockAudioWavDataUrl(
+  [392, 440, 523, 587, 659, 784, 659, 587, 523, 494, 440, 523, 587, 659],
+  520,
+)
 
 const DEFAULT_SCORE_CONVERSION_TABLE: ScoreConversionPoint[] = [
   { minRatio: 0.95, listeningScore: 495, readingScore: 495 },
-  { minRatio: 0.85, listeningScore: 445, readingScore: 430 },
-  { minRatio: 0.75, listeningScore: 395, readingScore: 375 },
-  { minRatio: 0.65, listeningScore: 345, readingScore: 320 },
-  { minRatio: 0.5, listeningScore: 275, readingScore: 250 },
-  { minRatio: 0.35, listeningScore: 195, readingScore: 175 },
-  { minRatio: 0.2, listeningScore: 115, readingScore: 100 },
-  { minRatio: 0.01, listeningScore: 45, readingScore: 35 },
+  { minRatio: 0.85, listeningScore: 450, readingScore: 430 },
+  { minRatio: 0.75, listeningScore: 400, readingScore: 380 },
+  { minRatio: 0.65, listeningScore: 350, readingScore: 330 },
+  { minRatio: 0.5, listeningScore: 310, readingScore: 290 },
+  { minRatio: 0.35, listeningScore: 220, readingScore: 200 },
+  { minRatio: 0.2, listeningScore: 130, readingScore: 110 },
+  { minRatio: 0.01, listeningScore: 50, readingScore: 40 },
   { minRatio: 0, listeningScore: 5, readingScore: 5 },
 ]
 
 function buildStandardParts(testPrefix: string, allowStandalonePartSelection = true): TestPart[] {
+  // Mọi câu hỏi ở tất cả các Part đều dùng chung 3 trường đồng nhất: `questionText`, `audioUrl`, `imageUrl`.
+  // Câu nào không có thành phần nào (khuyết chữ câu hỏi, khuyết ảnh hoặc khuyết âm thanh) chỉ cần để trống ''.
   const p1Groups: QuestionGroup[] = [
     {
       id: `${testPrefix}-g-p1-1`,
       partNumber: 1,
       audioGroupId: `${testPrefix}-audio-p1-1`,
-      groupTitle: 'Question 1 – Photograph Description',
-      stimulus: [
-        {
-          type: 'audio',
-          id: `${testPrefix}-aud-p1-1`,
-          url: AUDIO_PART1_Q1,
-          title: 'Part 1 - Question 1 Audio',
-          durationSeconds: 3,
-        },
-        {
-          type: 'image',
-          id: `${testPrefix}-img-p1-1`,
-          url: 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=900',
-          alt: 'Nhân viên thảo luận công việc quanh bàn họp có máy tính xách tay',
-          caption: 'Quan sát bức ảnh và lắng nghe 4 phương án mô tả A, B, C, D.',
-        },
-      ],
       questions: [
         {
           id: `${testPrefix}-q1`,
           questionNumber: 1,
           partNumber: 1,
           groupId: `${testPrefix}-g-p1-1`,
-          content: [
-            {
-              type: 'text',
-              id: `${testPrefix}-q1-txt`,
-              content: 'Select the statement that best describes what you see in the picture.',
-              variant: 'prompt',
-            },
-          ],
+          questionText: '',
+          audioUrl: AUDIO_PART1_Q1,
+          audioDurationSeconds: 5,
+          imageUrl: 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=900',
+          imageAlt: 'Nhân viên thảo luận công việc quanh bàn họp có máy tính xách tay',
           options: [
-            { id: `${testPrefix}-q1-a`, label: 'A', content: [{ type: 'text', id: `${testPrefix}-q1-a-t`, content: '(A)' }] },
-            { id: `${testPrefix}-q1-b`, label: 'B', content: [{ type: 'text', id: `${testPrefix}-q1-b-t`, content: '(B)' }] },
-            { id: `${testPrefix}-q1-c`, label: 'C', content: [{ type: 'text', id: `${testPrefix}-q1-c-t`, content: '(C)' }] },
-            { id: `${testPrefix}-q1-d`, label: 'D', content: [{ type: 'text', id: `${testPrefix}-q1-d-t`, content: '(D)' }] },
+            { id: `${testPrefix}-q1-a`, label: 'A', text: '' },
+            { id: `${testPrefix}-q1-b`, label: 'B', text: '' },
+            { id: `${testPrefix}-q1-c`, label: 'C', text: '' },
+            { id: `${testPrefix}-q1-d`, label: 'D', text: '' },
           ],
           displayOrder: 1,
         },
@@ -129,42 +117,22 @@ function buildStandardParts(testPrefix: string, allowStandalonePartSelection = t
       id: `${testPrefix}-g-p1-2`,
       partNumber: 1,
       audioGroupId: `${testPrefix}-audio-p1-2`,
-      groupTitle: 'Question 2 – Photograph Description',
-      stimulus: [
-        {
-          type: 'audio',
-          id: `${testPrefix}-aud-p1-2`,
-          url: AUDIO_PART1_Q2,
-          title: 'Part 1 - Question 2 Audio',
-          durationSeconds: 3,
-        },
-        {
-          type: 'image',
-          id: `${testPrefix}-img-p1-2`,
-          url: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=900',
-          alt: 'Khu vực kho vận với các kệ hàng được sắp xếp gọn gàng',
-          caption: 'Quan sát bức ảnh nhà kho và chọn đáp án đúng.',
-        },
-      ],
       questions: [
         {
           id: `${testPrefix}-q2`,
           questionNumber: 2,
           partNumber: 1,
           groupId: `${testPrefix}-g-p1-2`,
-          content: [
-            {
-              type: 'text',
-              id: `${testPrefix}-q2-txt`,
-              content: 'Select the statement that best describes what you see in the picture.',
-              variant: 'prompt',
-            },
-          ],
+          questionText: '',
+          audioUrl: AUDIO_PART1_Q2,
+          audioDurationSeconds: 5,
+          imageUrl: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=900',
+          imageAlt: 'Khu vực kho vận với các kệ hàng được sắp xếp gọn gàng',
           options: [
-            { id: `${testPrefix}-q2-a`, label: 'A', content: [{ type: 'text', id: `${testPrefix}-q2-a-t`, content: '(A)' }] },
-            { id: `${testPrefix}-q2-b`, label: 'B', content: [{ type: 'text', id: `${testPrefix}-q2-b-t`, content: '(B)' }] },
-            { id: `${testPrefix}-q2-c`, label: 'C', content: [{ type: 'text', id: `${testPrefix}-q2-c-t`, content: '(C)' }] },
-            { id: `${testPrefix}-q2-d`, label: 'D', content: [{ type: 'text', id: `${testPrefix}-q2-d-t`, content: '(D)' }] },
+            { id: `${testPrefix}-q2-a`, label: 'A', text: '' },
+            { id: `${testPrefix}-q2-b`, label: 'B', text: '' },
+            { id: `${testPrefix}-q2-c`, label: 'C', text: '' },
+            { id: `${testPrefix}-q2-d`, label: 'D', text: '' },
           ],
           displayOrder: 2,
         },
@@ -178,34 +146,20 @@ function buildStandardParts(testPrefix: string, allowStandalonePartSelection = t
       id: `${testPrefix}-g-p2-1`,
       partNumber: 2,
       audioGroupId: `${testPrefix}-audio-p2-1`,
-      groupTitle: 'Question 7 – Question-Response',
-      stimulus: [
-        {
-          type: 'audio',
-          id: `${testPrefix}-aud-p2-1`,
-          url: AUDIO_PART2_Q3,
-          title: 'Part 2 - Question 7 Audio',
-          durationSeconds: 3,
-        },
-      ],
       questions: [
         {
           id: `${testPrefix}-q3`,
           questionNumber: 7,
           partNumber: 2,
           groupId: `${testPrefix}-g-p2-1`,
-          content: [
-            {
-              type: 'text',
-              id: `${testPrefix}-q3-txt`,
-              content: 'Listen to the question and three responses. Choose the best response.',
-              variant: 'prompt',
-            },
-          ],
+          questionText: '',
+          audioUrl: AUDIO_PART2_Q3,
+          audioDurationSeconds: 5,
+          imageUrl: '',
           options: [
-            { id: `${testPrefix}-q3-a`, label: 'A', content: [{ type: 'text', id: `${testPrefix}-q3-a-t`, content: '(A)' }] },
-            { id: `${testPrefix}-q3-b`, label: 'B', content: [{ type: 'text', id: `${testPrefix}-q3-b-t`, content: '(B)' }] },
-            { id: `${testPrefix}-q3-c`, label: 'C', content: [{ type: 'text', id: `${testPrefix}-q3-c-t`, content: '(C)' }] },
+            { id: `${testPrefix}-q3-a`, label: 'A', text: '' },
+            { id: `${testPrefix}-q3-b`, label: 'B', text: '' },
+            { id: `${testPrefix}-q3-c`, label: 'C', text: '' },
           ],
           displayOrder: 7,
         },
@@ -216,34 +170,20 @@ function buildStandardParts(testPrefix: string, allowStandalonePartSelection = t
       id: `${testPrefix}-g-p2-2`,
       partNumber: 2,
       audioGroupId: `${testPrefix}-audio-p2-2`,
-      groupTitle: 'Question 8 – Question-Response',
-      stimulus: [
-        {
-          type: 'audio',
-          id: `${testPrefix}-aud-p2-2`,
-          url: AUDIO_PART2_Q4,
-          title: 'Part 2 - Question 8 Audio',
-          durationSeconds: 3,
-        },
-      ],
       questions: [
         {
           id: `${testPrefix}-q4`,
           questionNumber: 8,
           partNumber: 2,
           groupId: `${testPrefix}-g-p2-2`,
-          content: [
-            {
-              type: 'text',
-              id: `${testPrefix}-q4-txt`,
-              content: 'Listen to the question and three responses. Choose the best response.',
-              variant: 'prompt',
-            },
-          ],
+          questionText: '',
+          audioUrl: AUDIO_PART2_Q4,
+          audioDurationSeconds: 5,
+          imageUrl: '',
           options: [
-            { id: `${testPrefix}-q4-a`, label: 'A', content: [{ type: 'text', id: `${testPrefix}-q4-a-t`, content: '(A)' }] },
-            { id: `${testPrefix}-q4-b`, label: 'B', content: [{ type: 'text', id: `${testPrefix}-q4-b-t`, content: '(B)' }] },
-            { id: `${testPrefix}-q4-c`, label: 'C', content: [{ type: 'text', id: `${testPrefix}-q4-c-t`, content: '(C)' }] },
+            { id: `${testPrefix}-q4-a`, label: 'A', text: '' },
+            { id: `${testPrefix}-q4-b`, label: 'B', text: '' },
+            { id: `${testPrefix}-q4-c`, label: 'C', text: '' },
           ],
           displayOrder: 8,
         },
@@ -252,41 +192,31 @@ function buildStandardParts(testPrefix: string, allowStandalonePartSelection = t
     },
   ]
 
-  // Part 3: 1 đoạn Audio dùng chung cho 3 câu hỏi (Questions 32-34 theo chuẩn ETS)
+  // Part 3: 1 đoạn Audio dùng chung cho 3 câu hỏi (Questions 32-34)
   const p3Groups: QuestionGroup[] = [
     {
       id: `${testPrefix}-g-p3-1`,
       partNumber: 3,
       audioGroupId: `${testPrefix}-audio-p3-group1`,
       groupTitle: 'Questions 32–34 refer to the following conversation.',
-      stimulus: [
-        {
-          type: 'audio',
-          id: `${testPrefix}-aud-p3-1`,
-          url: AUDIO_PART3_GROUP1,
-          title: 'Part 3 - Conversation Audio (Questions 32–34)',
-          durationSeconds: 4,
-        },
-      ],
+      passageText: '',
+      audioUrl: AUDIO_PART3_GROUP1,
+      audioDurationSeconds: 7,
+      imageUrl: '',
       questions: [
         {
           id: `${testPrefix}-q5`,
           questionNumber: 32,
           partNumber: 3,
           groupId: `${testPrefix}-g-p3-1`,
-          content: [
-            {
-              type: 'text',
-              id: `${testPrefix}-q5-txt`,
-              content: 'What are the speakers mainly discussing?',
-              variant: 'prompt',
-            },
-          ],
+          questionText: 'What are the speakers mainly discussing?',
+          audioUrl: '',
+          imageUrl: '',
           options: [
-            { id: `${testPrefix}-q5-a`, label: 'A', content: [{ type: 'text', id: `${testPrefix}-q5-a-t`, content: 'A software upgrade schedule' }] },
-            { id: `${testPrefix}-q5-b`, label: 'B', content: [{ type: 'text', id: `${testPrefix}-q5-b-t`, content: 'An upcoming client orientation' }] },
-            { id: `${testPrefix}-q5-c`, label: 'C', content: [{ type: 'text', id: `${testPrefix}-q5-c-t`, content: 'A budget proposal for Q3' }] },
-            { id: `${testPrefix}-q5-d`, label: 'D', content: [{ type: 'text', id: `${testPrefix}-q5-d-t`, content: 'A warehouse relocation plan' }] },
+            { id: `${testPrefix}-q5-a`, label: 'A', text: 'A software upgrade schedule' },
+            { id: `${testPrefix}-q5-b`, label: 'B', text: 'An upcoming client orientation' },
+            { id: `${testPrefix}-q5-c`, label: 'C', text: 'A budget proposal for Q3' },
+            { id: `${testPrefix}-q5-d`, label: 'D', text: 'A warehouse relocation plan' },
           ],
           displayOrder: 32,
         },
@@ -295,19 +225,14 @@ function buildStandardParts(testPrefix: string, allowStandalonePartSelection = t
           questionNumber: 33,
           partNumber: 3,
           groupId: `${testPrefix}-g-p3-1`,
-          content: [
-            {
-              type: 'text',
-              id: `${testPrefix}-q6-txt`,
-              content: 'What problem does the woman mention?',
-              variant: 'prompt',
-            },
-          ],
+          questionText: 'What problem does the woman mention?',
+          audioUrl: '',
+          imageUrl: '',
           options: [
-            { id: `${testPrefix}-q6-a`, label: 'A', content: [{ type: 'text', id: `${testPrefix}-q6-a-t`, content: 'The main conference room is already booked.' }] },
-            { id: `${testPrefix}-q6-b`, label: 'B', content: [{ type: 'text', id: `${testPrefix}-q6-b-t`, content: 'The printed brochures have not arrived yet.' }] },
-            { id: `${testPrefix}-q6-c`, label: 'C', content: [{ type: 'text', id: `${testPrefix}-q6-c-t`, content: 'The keynote speaker flight was delayed.' }] },
-            { id: `${testPrefix}-q6-d`, label: 'D', content: [{ type: 'text', id: `${testPrefix}-q6-d-t`, content: 'The catering invoice contains an error.' }] },
+            { id: `${testPrefix}-q6-a`, label: 'A', text: 'The main conference room is already booked.' },
+            { id: `${testPrefix}-q6-b`, label: 'B', text: 'The printed brochures have not arrived yet.' },
+            { id: `${testPrefix}-q6-c`, label: 'C', text: 'The keynote speaker flight was delayed.' },
+            { id: `${testPrefix}-q6-d`, label: 'D', text: 'The catering invoice contains an error.' },
           ],
           displayOrder: 33,
         },
@@ -316,19 +241,14 @@ function buildStandardParts(testPrefix: string, allowStandalonePartSelection = t
           questionNumber: 34,
           partNumber: 3,
           groupId: `${testPrefix}-g-p3-1`,
-          content: [
-            {
-              type: 'text',
-              id: `${testPrefix}-q7-txt`,
-              content: 'What does the man offer to do next?',
-              variant: 'prompt',
-            },
-          ],
+          questionText: 'What does the man offer to do next?',
+          audioUrl: '',
+          imageUrl: '',
           options: [
-            { id: `${testPrefix}-q7-a`, label: 'A', content: [{ type: 'text', id: `${testPrefix}-q7-a-t`, content: 'Contact the printing supplier directly' }] },
-            { id: `${testPrefix}-q7-b`, label: 'B', content: [{ type: 'text', id: `${testPrefix}-q7-b-t`, content: 'Reschedule the meeting to Friday' }] },
-            { id: `${testPrefix}-q7-c`, label: 'C', content: [{ type: 'text', id: `${testPrefix}-q7-c-t`, content: 'Send digital copies to the attendees' }] },
-            { id: `${testPrefix}-q7-d`, label: 'D', content: [{ type: 'text', id: `${testPrefix}-q7-d-t`, content: 'Reserve a larger banquet hall' }] },
+            { id: `${testPrefix}-q7-a`, label: 'A', text: 'Contact the printing supplier directly' },
+            { id: `${testPrefix}-q7-b`, label: 'B', text: 'Reschedule the meeting to Friday' },
+            { id: `${testPrefix}-q7-c`, label: 'C', text: 'Send digital copies to the attendees' },
+            { id: `${testPrefix}-q7-d`, label: 'D', text: 'Reserve a larger banquet hall' },
           ],
           displayOrder: 34,
         },
@@ -337,48 +257,32 @@ function buildStandardParts(testPrefix: string, allowStandalonePartSelection = t
     },
   ]
 
-  // Part 4: 1 bài nói dùng chung cho 3 câu hỏi kèm biểu đồ trực quan (Questions 71-73 theo chuẩn ETS)
+  // Part 4: 1 bài nói dùng chung cho 3 câu hỏi kèm bảng lịch trình (Questions 71-73)
   const p4Groups: QuestionGroup[] = [
     {
       id: `${testPrefix}-g-p4-1`,
       partNumber: 4,
       audioGroupId: `${testPrefix}-audio-p4-group1`,
       groupTitle: 'Questions 71–73 refer to the following talk and schedule.',
-      stimulus: [
-        {
-          type: 'audio',
-          id: `${testPrefix}-aud-p4-1`,
-          url: AUDIO_PART4_GROUP1,
-          title: 'Part 4 - Short Talk Audio (Questions 71–73)',
-          durationSeconds: 4,
-        },
-        {
-          type: 'text',
-          id: `${testPrefix}-txt-p4-chart`,
-          content:
-            'ANNUAL TECH SUMMIT – MORNING TRACK\n• 08:30 AM – Registration & Welcome Coffee (Main Lobby)\n• 09:15 AM – Opening Keynote: Cloud Security Trends (Hall A)\n• 10:30 AM – Workshop: Automated Quality Assurance (Room 204)\n• 12:00 PM – Networking Luncheon (Terrace Garden)',
-          variant: 'passage',
-        },
-      ],
+      passageText:
+        'ANNUAL TECH SUMMIT – MORNING TRACK\n• 08:30 AM – Registration & Welcome Coffee (Main Lobby)\n• 09:15 AM – Opening Keynote: Cloud Security Trends (Hall A)\n• 10:30 AM – Workshop: Automated Quality Assurance (Room 204)\n• 12:00 PM – Networking Luncheon (Terrace Garden)',
+      audioUrl: AUDIO_PART4_GROUP1,
+      audioDurationSeconds: 7,
+      imageUrl: '',
       questions: [
         {
           id: `${testPrefix}-q8`,
           questionNumber: 71,
           partNumber: 4,
           groupId: `${testPrefix}-g-p4-1`,
-          content: [
-            {
-              type: 'text',
-              id: `${testPrefix}-q8-txt`,
-              content: 'Who most likely is the speaker?',
-              variant: 'prompt',
-            },
-          ],
+          questionText: 'Who most likely is the speaker?',
+          audioUrl: '',
+          imageUrl: '',
           options: [
-            { id: `${testPrefix}-q8-a`, label: 'A', content: [{ type: 'text', id: `${testPrefix}-q8-a-t`, content: 'An event coordinator' }] },
-            { id: `${testPrefix}-q8-b`, label: 'B', content: [{ type: 'text', id: `${testPrefix}-q8-b-t`, content: 'A hotel receptionist' }] },
-            { id: `${testPrefix}-q8-c`, label: 'C', content: [{ type: 'text', id: `${testPrefix}-q8-c-t`, content: 'A travel agent' }] },
-            { id: `${testPrefix}-q8-d`, label: 'D', content: [{ type: 'text', id: `${testPrefix}-q8-d-t`, content: 'A software developer' }] },
+            { id: `${testPrefix}-q8-a`, label: 'A', text: 'An event coordinator' },
+            { id: `${testPrefix}-q8-b`, label: 'B', text: 'A hotel receptionist' },
+            { id: `${testPrefix}-q8-c`, label: 'C', text: 'A travel agent' },
+            { id: `${testPrefix}-q8-d`, label: 'D', text: 'A software developer' },
           ],
           displayOrder: 71,
         },
@@ -387,19 +291,14 @@ function buildStandardParts(testPrefix: string, allowStandalonePartSelection = t
           questionNumber: 72,
           partNumber: 4,
           groupId: `${testPrefix}-g-p4-1`,
-          content: [
-            {
-              type: 'text',
-              id: `${testPrefix}-q9-txt`,
-              content: 'Look at the graphic. Which session has been moved to Room 302?',
-              variant: 'prompt',
-            },
-          ],
+          questionText: 'Look at the graphic. Which session has been moved to Room 302?',
+          audioUrl: '',
+          imageUrl: '',
           options: [
-            { id: `${testPrefix}-q9-a`, label: 'A', content: [{ type: 'text', id: `${testPrefix}-q9-a-t`, content: 'Registration & Welcome Coffee' }] },
-            { id: `${testPrefix}-q9-b`, label: 'B', content: [{ type: 'text', id: `${testPrefix}-q9-b-t`, content: 'Opening Keynote: Cloud Security Trends' }] },
-            { id: `${testPrefix}-q9-c`, label: 'C', content: [{ type: 'text', id: `${testPrefix}-q9-c-t`, content: 'Workshop: Automated Quality Assurance' }] },
-            { id: `${testPrefix}-q9-d`, label: 'D', content: [{ type: 'text', id: `${testPrefix}-q9-d-t`, content: 'Networking Luncheon' }] },
+            { id: `${testPrefix}-q9-a`, label: 'A', text: 'Registration & Welcome Coffee' },
+            { id: `${testPrefix}-q9-b`, label: 'B', text: 'Opening Keynote: Cloud Security Trends' },
+            { id: `${testPrefix}-q9-c`, label: 'C', text: 'Workshop: Automated Quality Assurance' },
+            { id: `${testPrefix}-q9-d`, label: 'D', text: 'Networking Luncheon' },
           ],
           displayOrder: 72,
         },
@@ -408,19 +307,14 @@ function buildStandardParts(testPrefix: string, allowStandalonePartSelection = t
           questionNumber: 73,
           partNumber: 4,
           groupId: `${testPrefix}-g-p4-1`,
-          content: [
-            {
-              type: 'text',
-              id: `${testPrefix}-q10-txt`,
-              content: 'What are listeners reminded to do before leaving the auditorium?',
-              variant: 'prompt',
-            },
-          ],
+          questionText: 'What are listeners reminded to do before leaving the auditorium?',
+          audioUrl: '',
+          imageUrl: '',
           options: [
-            { id: `${testPrefix}-q10-a`, label: 'A', content: [{ type: 'text', id: `${testPrefix}-q10-a-t`, content: 'Pick up their parking validation tickets' }] },
-            { id: `${testPrefix}-q10-b`, label: 'B', content: [{ type: 'text', id: `${testPrefix}-q10-b-t`, content: 'Complete the digital feedback survey on the mobile app' }] },
-            { id: `${testPrefix}-q10-c`, label: 'C', content: [{ type: 'text', id: `${testPrefix}-q10-c-t`, content: 'Return their translation headsets' }] },
-            { id: `${testPrefix}-q10-d`, label: 'D', content: [{ type: 'text', id: `${testPrefix}-q10-d-t`, content: 'Sign up for the afternoon shuttle bus' }] },
+            { id: `${testPrefix}-q10-a`, label: 'A', text: 'Pick up their parking validation tickets' },
+            { id: `${testPrefix}-q10-b`, label: 'B', text: 'Complete the digital feedback survey on the mobile app' },
+            { id: `${testPrefix}-q10-c`, label: 'C', text: 'Return their translation headsets' },
+            { id: `${testPrefix}-q10-d`, label: 'D', text: 'Sign up for the afternoon shuttle bus' },
           ],
           displayOrder: 73,
         },
@@ -429,33 +323,26 @@ function buildStandardParts(testPrefix: string, allowStandalonePartSelection = t
     },
   ]
 
-  // Part 5: Incomplete Sentences (Questions 101-103 theo chuẩn ETS)
+  // Part 5: Incomplete Sentences (Questions 101-103)
   const p5Groups: QuestionGroup[] = [
     {
       id: `${testPrefix}-g-p5-1`,
       partNumber: 5,
-      groupTitle: 'Part 5 – Incomplete Sentences',
-      stimulus: [],
       questions: [
         {
           id: `${testPrefix}-q11`,
           questionNumber: 101,
           partNumber: 5,
           groupId: `${testPrefix}-g-p5-1`,
-          content: [
-            {
-              type: 'text',
-              id: `${testPrefix}-q11-txt`,
-              content:
-                'All international shipments must be inspected _______ they are loaded onto the cargo aircraft.',
-              variant: 'prompt',
-            },
-          ],
+          questionText:
+            'All international shipments must be inspected _______ they are loaded onto the cargo aircraft.',
+          audioUrl: '',
+          imageUrl: '',
           options: [
-            { id: `${testPrefix}-q11-a`, label: 'A', content: [{ type: 'text', id: `${testPrefix}-q11-a-t`, content: 'before' }] },
-            { id: `${testPrefix}-q11-b`, label: 'B', content: [{ type: 'text', id: `${testPrefix}-q11-b-t`, content: 'during' }] },
-            { id: `${testPrefix}-q11-c`, label: 'C', content: [{ type: 'text', id: `${testPrefix}-q11-c-t`, content: 'prior' }] },
-            { id: `${testPrefix}-q11-d`, label: 'D', content: [{ type: 'text', id: `${testPrefix}-q11-d-t`, content: 'until' }] },
+            { id: `${testPrefix}-q11-a`, label: 'A', text: 'before' },
+            { id: `${testPrefix}-q11-b`, label: 'B', text: 'during' },
+            { id: `${testPrefix}-q11-c`, label: 'C', text: 'prior' },
+            { id: `${testPrefix}-q11-d`, label: 'D', text: 'until' },
           ],
           displayOrder: 101,
         },
@@ -464,20 +351,15 @@ function buildStandardParts(testPrefix: string, allowStandalonePartSelection = t
           questionNumber: 102,
           partNumber: 5,
           groupId: `${testPrefix}-g-p5-1`,
-          content: [
-            {
-              type: 'text',
-              id: `${testPrefix}-q12-txt`,
-              content:
-                'Ms. Tanaka received praise from the board of directors for her _______ analysis of the Asian retail market.',
-              variant: 'prompt',
-            },
-          ],
+          questionText:
+            'Ms. Tanaka received praise from the board of directors for her _______ analysis of the Asian retail market.',
+          audioUrl: '',
+          imageUrl: '',
           options: [
-            { id: `${testPrefix}-q12-a`, label: 'A', content: [{ type: 'text', id: `${testPrefix}-q12-a-t`, content: 'comprehend' }] },
-            { id: `${testPrefix}-q12-b`, label: 'B', content: [{ type: 'text', id: `${testPrefix}-q12-b-t`, content: 'comprehensive' }] },
-            { id: `${testPrefix}-q12-c`, label: 'C', content: [{ type: 'text', id: `${testPrefix}-q12-c-t`, content: 'comprehensively' }] },
-            { id: `${testPrefix}-q12-d`, label: 'D', content: [{ type: 'text', id: `${testPrefix}-q12-d-t`, content: 'comprehension' }] },
+            { id: `${testPrefix}-q12-a`, label: 'A', text: 'comprehend' },
+            { id: `${testPrefix}-q12-b`, label: 'B', text: 'comprehensive' },
+            { id: `${testPrefix}-q12-c`, label: 'C', text: 'comprehensively' },
+            { id: `${testPrefix}-q12-d`, label: 'D', text: 'comprehension' },
           ],
           displayOrder: 102,
         },
@@ -486,20 +368,15 @@ function buildStandardParts(testPrefix: string, allowStandalonePartSelection = t
           questionNumber: 103,
           partNumber: 5,
           groupId: `${testPrefix}-g-p5-1`,
-          content: [
-            {
-              type: 'text',
-              id: `${testPrefix}-q13-txt`,
-              content:
-                'Employees who wish to attend the leadership seminar should register no later than Friday, _______ seating is limited.',
-              variant: 'prompt',
-            },
-          ],
+          questionText:
+            'Employees who wish to attend the leadership seminar should register no later than Friday, _______ seating is limited.',
+          audioUrl: '',
+          imageUrl: '',
           options: [
-            { id: `${testPrefix}-q13-a`, label: 'A', content: [{ type: 'text', id: `${testPrefix}-q13-a-t`, content: 'despite' }] },
-            { id: `${testPrefix}-q13-b`, label: 'B', content: [{ type: 'text', id: `${testPrefix}-q13-b-t`, content: 'as' }] },
-            { id: `${testPrefix}-q13-c`, label: 'C', content: [{ type: 'text', id: `${testPrefix}-q13-c-t`, content: 'so that' }] },
-            { id: `${testPrefix}-q13-d`, label: 'D', content: [{ type: 'text', id: `${testPrefix}-q13-d-t`, content: 'whether' }] },
+            { id: `${testPrefix}-q13-a`, label: 'A', text: 'despite' },
+            { id: `${testPrefix}-q13-b`, label: 'B', text: 'as' },
+            { id: `${testPrefix}-q13-c`, label: 'C', text: 'so that' },
+            { id: `${testPrefix}-q13-d`, label: 'D', text: 'whether' },
           ],
           displayOrder: 103,
         },
@@ -508,40 +385,30 @@ function buildStandardParts(testPrefix: string, allowStandalonePartSelection = t
     },
   ]
 
-  // Part 6: Text Completion (Questions 131-132 theo chuẩn ETS)
+  // Part 6: Text Completion (Questions 131-134 gồm 2 cụm đoạn văn)
   const p6Groups: QuestionGroup[] = [
     {
       id: `${testPrefix}-g-p6-1`,
       partNumber: 6,
       groupTitle: 'Questions 131–132 refer to the following internal memo.',
-      stimulus: [
-        {
-          type: 'text',
-          id: `${testPrefix}-txt-p6-memo`,
-          content:
-            'MEMORANDUM\nTo: All Regional Sales Representatives\nFrom: David Nguyen, Operations Director\nDate: October 14\nSubject: Updated Travel Reimbursement Policy\n\nStarting November 1, all travel expense reports must be submitted through the new FinTrack online portal within ten business days of completing a trip. Previously, paper receipts could be handed in to the accounting desk at the end of each quarter. _______ (131) _______. Any expense claim submitted without digital copies of itemized receipts will be returned for revision.\n\nIf you have not yet activated your FinTrack account, please contact the IT Helpdesk _______ (132) _______ the end of this week.',
-          variant: 'passage',
-        },
-      ],
+      passageText:
+        'MEMORANDUM\nTo: All Regional Sales Representatives\nFrom: David Nguyen, Operations Director\nDate: October 14\nSubject: Updated Travel Reimbursement Policy\n\nStarting November 1, all travel expense reports must be submitted through the new FinTrack online portal within ten business days of completing a trip. Previously, paper receipts could be handed in to the accounting desk at the end of each quarter. _______ (131) _______. Any expense claim submitted without digital copies of itemized receipts will be returned for revision.\n\nIf you have not yet activated your FinTrack account, please contact the IT Helpdesk _______ (132) _______ the end of this week.',
+      audioUrl: '',
+      imageUrl: '',
       questions: [
         {
           id: `${testPrefix}-q14`,
           questionNumber: 131,
           partNumber: 6,
           groupId: `${testPrefix}-g-p6-1`,
-          content: [
-            {
-              type: 'text',
-              id: `${testPrefix}-q14-txt`,
-              content: 'Select the best sentence to fill in blank (131).',
-              variant: 'prompt',
-            },
-          ],
+          questionText: 'Select the best sentence to fill in blank (131).',
+          audioUrl: '',
+          imageUrl: '',
           options: [
-            { id: `${testPrefix}-q14-a`, label: 'A', content: [{ type: 'text', id: `${testPrefix}-q14-a-t`, content: 'This transition will speed up reimbursement processing significantly.' }] },
-            { id: `${testPrefix}-q14-b`, label: 'B', content: [{ type: 'text', id: `${testPrefix}-q14-b-t`, content: 'The annual sales conference will be held in Da Nang this year.' }] },
-            { id: `${testPrefix}-q14-c`, label: 'C', content: [{ type: 'text', id: `${testPrefix}-q14-c-t`, content: 'Several airlines have recently reduced their baggage fees.' }] },
-            { id: `${testPrefix}-q14-d`, label: 'D', content: [{ type: 'text', id: `${testPrefix}-q14-d-t`, content: 'Please attach your résumé to the application form.' }] },
+            { id: `${testPrefix}-q14-a`, label: 'A', text: 'This transition will speed up reimbursement processing significantly.' },
+            { id: `${testPrefix}-q14-b`, label: 'B', text: 'The annual sales conference will be held in Da Nang this year.' },
+            { id: `${testPrefix}-q14-c`, label: 'C', text: 'Several airlines have recently reduced their baggage fees.' },
+            { id: `${testPrefix}-q14-d`, label: 'D', text: 'Please attach your résumé to the application form.' },
           ],
           displayOrder: 131,
         },
@@ -550,68 +417,92 @@ function buildStandardParts(testPrefix: string, allowStandalonePartSelection = t
           questionNumber: 132,
           partNumber: 6,
           groupId: `${testPrefix}-g-p6-1`,
-          content: [
-            {
-              type: 'text',
-              id: `${testPrefix}-q15-txt`,
-              content: 'Select the best word or phrase to fill in blank (132).',
-              variant: 'prompt',
-            },
-          ],
+          questionText: 'Select the best word or phrase to fill in blank (132).',
+          audioUrl: '',
+          imageUrl: '',
           options: [
-            { id: `${testPrefix}-q15-a`, label: 'A', content: [{ type: 'text', id: `${testPrefix}-q15-a-t`, content: 'by' }] },
-            { id: `${testPrefix}-q15-b`, label: 'B', content: [{ type: 'text', id: `${testPrefix}-q15-b-t`, content: 'while' }] },
-            { id: `${testPrefix}-q15-c`, label: 'C', content: [{ type: 'text', id: `${testPrefix}-q15-c-t`, content: 'among' }] },
-            { id: `${testPrefix}-q15-d`, label: 'D', content: [{ type: 'text', id: `${testPrefix}-q15-d-t`, content: 'except' }] },
+            { id: `${testPrefix}-q15-a`, label: 'A', text: 'by' },
+            { id: `${testPrefix}-q15-b`, label: 'B', text: 'while' },
+            { id: `${testPrefix}-q15-c`, label: 'C', text: 'among' },
+            { id: `${testPrefix}-q15-d`, label: 'D', text: 'except' },
           ],
           displayOrder: 132,
         },
       ],
       displayOrder: 1,
     },
+    {
+      id: `${testPrefix}-g-p6-2`,
+      partNumber: 6,
+      groupTitle: 'Questions 133–134 refer to the following customer announcement.',
+      passageText:
+        'CUSTOMER NOTICE – GREENLEAF BOOKSTORE\n\nThank you for supporting Greenleaf Bookstore over the past twelve years. Beginning next Monday, our flagship store on Nguyen Hue Boulevard will temporarily close for a two-week interior renovation. _______ (133) _______. Online orders placed through our website will continue to be shipped daily without interruption.\n\nAll loyalty members will receive a 20% discount voucher _______ (134) _______ our grand reopening celebration on April 15.',
+      audioUrl: '',
+      imageUrl: '',
+      questions: [
+        {
+          id: `${testPrefix}-q19`,
+          questionNumber: 133,
+          partNumber: 6,
+          groupId: `${testPrefix}-g-p6-2`,
+          questionText: 'Select the best sentence to fill in blank (133).',
+          audioUrl: '',
+          imageUrl: '',
+          options: [
+            { id: `${testPrefix}-q19-a`, label: 'A', text: 'During this period, customers are welcome to visit our District 3 branch.' },
+            { id: `${testPrefix}-q19-b`, label: 'B', text: 'The author will sign copies of the novel at seven o’clock.' },
+            { id: `${testPrefix}-q19-c`, label: 'C', text: 'Paperback textbooks are located on the second floor.' },
+            { id: `${testPrefix}-q19-d`, label: 'D', text: 'Several cashiers were hired last summer.' },
+          ],
+          displayOrder: 133,
+        },
+        {
+          id: `${testPrefix}-q20`,
+          questionNumber: 134,
+          partNumber: 6,
+          groupId: `${testPrefix}-g-p6-2`,
+          questionText: 'Select the best word or phrase to fill in blank (134).',
+          audioUrl: '',
+          imageUrl: '',
+          options: [
+            { id: `${testPrefix}-q20-a`, label: 'A', text: 'for' },
+            { id: `${testPrefix}-q20-b`, label: 'B', text: 'unless' },
+            { id: `${testPrefix}-q20-c`, label: 'C', text: 'whether' },
+            { id: `${testPrefix}-q20-d`, label: 'D', text: 'whose' },
+          ],
+          displayOrder: 134,
+        },
+      ],
+      displayOrder: 2,
+    },
   ]
 
-  // Part 7: Reading Comprehension (Questions 147-149 theo chuẩn ETS)
+  // Part 7: Reading Comprehension (Questions 147-152 gồm 2 cụm đoạn văn)
   const p7Groups: QuestionGroup[] = [
     {
       id: `${testPrefix}-g-p7-1`,
       partNumber: 7,
       groupTitle: 'Questions 147–149 refer to the following email and service notice.',
-      stimulus: [
-        {
-          type: 'text',
-          id: `${testPrefix}-txt-p7-email`,
-          content:
-            'EMAIL\nTo: customersupport@luminaoffice.com\nFrom: h.tran@apexarchitects.vn\nDate: March 18\nSubject: Order #LO-88421 – Conference Table Delivery\n\nDear Customer Support Team,\n\nLast week, our firm ordered two oak conference tables (Model CT-900) scheduled for delivery to our District 1 office on March 22. However, our interior renovation contractor informed us this morning that the flooring installation in the main boardroom will not be finished until March 26.\n\nCould we postpone the delivery to Friday, March 28, during the morning window (8:30 AM – 11:30 AM)? In addition, we would like to add four ergonomic mesh chairs (Model EC-210) to the same shipment so that we can qualify for complimentary assembly service.\n\nThank you for your assistance.\nBest regards,\nHoang Tran\nFacilities Manager, Apex Architects',
-          variant: 'passage',
-        },
-        {
-          type: 'text',
-          id: `${testPrefix}-txt-p7-notice`,
-          content:
-            'LUMINA OFFICE FURNISHINGS – DELIVERY & ASSEMBLY POLICY\n• Standard Delivery: Free for all corporate orders over $1,500.\n• Complimentary On-Site Assembly: Available for orders totaling $2,500 or more.\n• Rescheduling Policy: Customers may change their delivery date at no extra charge provided the request is received at least 72 hours prior to the original delivery date.',
-          variant: 'passage',
-        },
+      passages: [
+        'EMAIL\nTo: customersupport@luminaoffice.com\nFrom: h.tran@apexarchitects.vn\nDate: March 18\nSubject: Order #LO-88421 – Conference Table Delivery\n\nDear Customer Support Team,\n\nLast week, our firm ordered two oak conference tables (Model CT-900) scheduled for delivery to our District 1 office on March 22. However, our interior renovation contractor informed us this morning that the flooring installation in the main boardroom will not be finished until March 26.\n\nCould we postpone the delivery to Friday, March 28, during the morning window (8:30 AM – 11:30 AM)? In addition, we would like to add four ergonomic mesh chairs (Model EC-210) to the same shipment so that we can qualify for complimentary assembly service.\n\nThank you for your assistance.\nBest regards,\nHoang Tran\nFacilities Manager, Apex Architects',
+        'LUMINA OFFICE FURNISHINGS – DELIVERY & ASSEMBLY POLICY\n• Standard Delivery: Free for all corporate orders over $1,500.\n• Complimentary On-Site Assembly: Available for orders totaling $2,500 or more.\n• Rescheduling Policy: Customers may change their delivery date at no extra charge provided the request is received at least 72 hours prior to the original delivery date.',
       ],
+      audioUrl: '',
+      imageUrl: '',
       questions: [
         {
           id: `${testPrefix}-q16`,
           questionNumber: 147,
           partNumber: 7,
           groupId: `${testPrefix}-g-p7-1`,
-          content: [
-            {
-              type: 'text',
-              id: `${testPrefix}-q16-txt`,
-              content: 'Why did Mr. Tran send the email?',
-              variant: 'prompt',
-            },
-          ],
+          questionText: 'Why did Mr. Tran send the email?',
+          audioUrl: '',
+          imageUrl: '',
           options: [
-            { id: `${testPrefix}-q16-a`, label: 'A', content: [{ type: 'text', id: `${testPrefix}-q16-a-t`, content: 'To report a damaged item in a recent shipment' }] },
-            { id: `${testPrefix}-q16-b`, label: 'B', content: [{ type: 'text', id: `${testPrefix}-q16-b-t`, content: 'To request a later delivery date and add items to an order' }] },
-            { id: `${testPrefix}-q16-c`, label: 'C', content: [{ type: 'text', id: `${testPrefix}-q16-c-t`, content: 'To cancel a furniture rental contract' }] },
-            { id: `${testPrefix}-q16-d`, label: 'D', content: [{ type: 'text', id: `${testPrefix}-q16-d-t`, content: 'To inquire about a showroom location in District 1' }] },
+            { id: `${testPrefix}-q16-a`, label: 'A', text: 'To report a damaged item in a recent shipment' },
+            { id: `${testPrefix}-q16-b`, label: 'B', text: 'To request a later delivery date and add items to an order' },
+            { id: `${testPrefix}-q16-c`, label: 'C', text: 'To cancel a furniture rental contract' },
+            { id: `${testPrefix}-q16-d`, label: 'D', text: 'To inquire about a showroom location in District 1' },
           ],
           displayOrder: 147,
         },
@@ -620,19 +511,14 @@ function buildStandardParts(testPrefix: string, allowStandalonePartSelection = t
           questionNumber: 148,
           partNumber: 7,
           groupId: `${testPrefix}-g-p7-1`,
-          content: [
-            {
-              type: 'text',
-              id: `${testPrefix}-q17-txt`,
-              content: 'Why does Apex Architects need to delay the delivery?',
-              variant: 'prompt',
-            },
-          ],
+          questionText: 'Why does Apex Architects need to delay the delivery?',
+          audioUrl: '',
+          imageUrl: '',
           options: [
-            { id: `${testPrefix}-q17-a`, label: 'A', content: [{ type: 'text', id: `${testPrefix}-q17-a-t`, content: 'The company is moving to a different building.' }] },
-            { id: `${testPrefix}-q17-b`, label: 'B', content: [{ type: 'text', id: `${testPrefix}-q17-b-t`, content: 'The office will be closed for a public holiday.' }] },
-            { id: `${testPrefix}-q17-c`, label: 'C', content: [{ type: 'text', id: `${testPrefix}-q17-c-t`, content: 'Flooring work in the boardroom is taking longer than expected.' }] },
-            { id: `${testPrefix}-q17-d`, label: 'D', content: [{ type: 'text', id: `${testPrefix}-q17-d-t`, content: 'The accounting department has not approved the invoice.' }] },
+            { id: `${testPrefix}-q17-a`, label: 'A', text: 'The company is moving to a different building.' },
+            { id: `${testPrefix}-q17-b`, label: 'B', text: 'The office will be closed for a public holiday.' },
+            { id: `${testPrefix}-q17-c`, label: 'C', text: 'Flooring work in the boardroom is taking longer than expected.' },
+            { id: `${testPrefix}-q17-d`, label: 'D', text: 'The accounting department has not approved the invoice.' },
           ],
           displayOrder: 148,
         },
@@ -641,25 +527,80 @@ function buildStandardParts(testPrefix: string, allowStandalonePartSelection = t
           questionNumber: 149,
           partNumber: 7,
           groupId: `${testPrefix}-g-p7-1`,
-          content: [
-            {
-              type: 'text',
-              id: `${testPrefix}-q18-txt`,
-              content:
-                'According to the policy, why is Mr. Tran eligible to reschedule without an additional fee?',
-              variant: 'prompt',
-            },
-          ],
+          questionText:
+            'According to the policy, why is Mr. Tran eligible to reschedule without an additional fee?',
+          audioUrl: '',
+          imageUrl: '',
           options: [
-            { id: `${testPrefix}-q18-a`, label: 'A', content: [{ type: 'text', id: `${testPrefix}-q18-a-t`, content: 'He submitted his request more than 72 hours before March 22.' }] },
-            { id: `${testPrefix}-q18-b`, label: 'B', content: [{ type: 'text', id: `${testPrefix}-q18-b-t`, content: 'He is a first-time corporate customer.' }] },
-            { id: `${testPrefix}-q18-c`, label: 'C', content: [{ type: 'text', id: `${testPrefix}-q18-c-t`, content: 'His office is located within the city center.' }] },
-            { id: `${testPrefix}-q18-d`, label: 'D', content: [{ type: 'text', id: `${testPrefix}-q18-d-t`, content: 'He paid for an extended warranty plan.' }] },
+            { id: `${testPrefix}-q18-a`, label: 'A', text: 'He submitted his request more than 72 hours before March 22.' },
+            { id: `${testPrefix}-q18-b`, label: 'B', text: 'He is a first-time corporate customer.' },
+            { id: `${testPrefix}-q18-c`, label: 'C', text: 'His office is located within the city center.' },
+            { id: `${testPrefix}-q18-d`, label: 'D', text: 'He paid for an extended warranty plan.' },
           ],
           displayOrder: 149,
         },
       ],
       displayOrder: 1,
+    },
+    {
+      id: `${testPrefix}-g-p7-2`,
+      partNumber: 7,
+      groupTitle: 'Questions 150–152 refer to the following workshop announcement.',
+      passageText:
+        'PROFESSIONAL DEVELOPMENT WORKSHOP\nTopic: Effective Cross-Team Project Management\nDate: Thursday, May 14 | Time: 1:30 PM – 4:30 PM\nLocation: Conference Room B (4th Floor)\nInstructor: Ms. Claire Pham, Senior PMO Consultant\n\nOverview:\nThis interactive three-hour workshop is designed for newly appointed team leaders and assistant managers. Participants will practice sprint planning, risk tracking, and stakeholder reporting using real company case studies.\n\nRegistration:\nAttendance is capped at 25 participants. Please register via the HR Intranet portal by May 8. Laptops are required for the hands-on exercises.',
+      audioUrl: '',
+      imageUrl: '',
+      questions: [
+        {
+          id: `${testPrefix}-q21`,
+          questionNumber: 150,
+          partNumber: 7,
+          groupId: `${testPrefix}-g-p7-2`,
+          questionText: 'Who is the workshop primarily intended for?',
+          audioUrl: '',
+          imageUrl: '',
+          options: [
+            { id: `${testPrefix}-q21-a`, label: 'A', text: 'External software vendors' },
+            { id: `${testPrefix}-q21-b`, label: 'B', text: 'New team leaders and assistant managers' },
+            { id: `${testPrefix}-q21-c`, label: 'C', text: 'Accounting interns' },
+            { id: `${testPrefix}-q21-d`, label: 'D', text: 'Customer support callers' },
+          ],
+          displayOrder: 150,
+        },
+        {
+          id: `${testPrefix}-q22`,
+          questionNumber: 151,
+          partNumber: 7,
+          groupId: `${testPrefix}-g-p7-2`,
+          questionText: 'What must participants bring to the workshop?',
+          audioUrl: '',
+          imageUrl: '',
+          options: [
+            { id: `${testPrefix}-q22-a`, label: 'A', text: 'Printed financial statements' },
+            { id: `${testPrefix}-q22-b`, label: 'B', text: 'Signed supervisor approval forms' },
+            { id: `${testPrefix}-q22-c`, label: 'C', text: 'Their portable computers' },
+            { id: `${testPrefix}-q22-d`, label: 'D', text: 'Visitor identification badges' },
+          ],
+          displayOrder: 151,
+        },
+        {
+          id: `${testPrefix}-q23`,
+          questionNumber: 152,
+          partNumber: 7,
+          groupId: `${testPrefix}-g-p7-2`,
+          questionText: 'What is indicated about registration for the session?',
+          audioUrl: '',
+          imageUrl: '',
+          options: [
+            { id: `${testPrefix}-q23-a`, label: 'A', text: 'It closes on May 8.' },
+            { id: `${testPrefix}-q23-b`, label: 'B', text: 'It requires a $50 training fee.' },
+            { id: `${testPrefix}-q23-c`, label: 'C', text: 'It is open to up to 100 employees.' },
+            { id: `${testPrefix}-q23-d`, label: 'D', text: 'It must be completed by telephone.' },
+          ],
+          displayOrder: 152,
+        },
+      ],
+      displayOrder: 2,
     },
   ]
 
@@ -823,7 +764,7 @@ function buildStandardParts(testPrefix: string, allowStandalonePartSelection = t
       importantNotes: [
         'Khung đoạn văn bên trái hỗ trợ cuộn độc lập với khung câu hỏi bên phải.',
       ],
-      questionCount: 2,
+      questionCount: 4,
       standardToeicCount: 16,
       suggestedMinutes: 12,
       allowStandaloneSelection: true,
@@ -849,7 +790,7 @@ function buildStandardParts(testPrefix: string, allowStandalonePartSelection = t
       importantNotes: [
         'Kiểm tra kỹ các câu đã đánh dấu xem lại trước khi nhấn NỘP BÀI THI.',
       ],
-      questionCount: 3,
+      questionCount: 6,
       standardToeicCount: 54,
       suggestedMinutes: 45,
       allowStandaloneSelection: true,
@@ -993,6 +934,36 @@ function buildAnswerKeysForPrefix(testPrefix: string): Record<string, ServerTest
       explanation:
         'Chính sách quy định khách được đổi lịch miễn phí nếu gửi yêu cầu trước ít nhất 72 giờ so với ngày giao ban đầu. Email gửi ngày 18/3, trước ngày giao ban đầu 22/3 là 4 ngày (96 giờ) -> Đáp án (A).',
     },
+    [`${testPrefix}-q19`]: {
+      questionId: `${testPrefix}-q19`,
+      correctOptionId: `${testPrefix}-q19-a`,
+      explanation:
+        'Câu trước thông báo cửa hàng chính tạm đóng cửa 2 tuần để sửa chữa; câu (A) hướng dẫn khách ghé chi nhánh Quận 3 trong thời gian này là mạch lạc nhất.',
+    },
+    [`${testPrefix}-q20`]: {
+      questionId: `${testPrefix}-q20`,
+      correctOptionId: `${testPrefix}-q20-a`,
+      explanation:
+        'Giới từ "for" (dành cho dịp khai trương lại vào ngày 15/4) phù hợp nhất về ngữ pháp và ngữ nghĩa -> Đáp án (A).',
+    },
+    [`${testPrefix}-q21`]: {
+      questionId: `${testPrefix}-q21`,
+      correctOptionId: `${testPrefix}-q21-b`,
+      explanation:
+        'Trong phần Overview nêu rõ: "designed for newly appointed team leaders and assistant managers" -> Đáp án (B).',
+    },
+    [`${testPrefix}-q22`]: {
+      questionId: `${testPrefix}-q22`,
+      correctOptionId: `${testPrefix}-q22-c`,
+      explanation:
+        'Cuối thông báo ghi rõ: "Laptops are required for the hands-on exercises" (laptops = portable computers) -> Đáp án (C).',
+    },
+    [`${testPrefix}-q23`]: {
+      questionId: `${testPrefix}-q23`,
+      correctOptionId: `${testPrefix}-q23-a`,
+      explanation:
+        'Thông báo ghi: "Please register via the HR Intranet portal by May 8" -> hạn đăng ký kết thúc ngày 8/5 -> Đáp án (A).',
+    },
   }
 }
 
@@ -1010,7 +981,7 @@ export const mockTests: Test[] = [
     difficulty: 'Chuẩn ETS (700+)',
     testType: 'Full Test 7 Parts',
     duration: 120,
-    totalQuestions: 18,
+    totalQuestions: 23,
     standardTotalQuestions: 200,
     attemptsCount: 275192,
     createdAt: '2026-11-15T08:00:00.000Z',
@@ -1040,7 +1011,7 @@ export const mockTests: Test[] = [
     difficulty: 'Chuẩn ETS (700+)',
     testType: 'Full Test 7 Parts',
     duration: 120,
-    totalQuestions: 18,
+    totalQuestions: 23,
     standardTotalQuestions: 200,
     attemptsCount: 159480,
     createdAt: '2026-11-12T08:00:00.000Z',
@@ -1069,7 +1040,7 @@ export const mockTests: Test[] = [
     difficulty: 'Trung cấp (550+)',
     testType: 'Full Test 7 Parts',
     duration: 120,
-    totalQuestions: 18,
+    totalQuestions: 23,
     standardTotalQuestions: 200,
     attemptsCount: 123601,
     createdAt: '2026-11-08T08:00:00.000Z',
@@ -1097,9 +1068,9 @@ export const mockTests: Test[] = [
     difficulty: 'Nâng cao (850+)',
     testType: 'Full Test 7 Parts',
     duration: 120,
-    totalQuestions: 18,
+    totalQuestions: 23,
     standardTotalQuestions: 200,
-    attemptsCount: 101359,
+    attemptsCount: 101860,
     createdAt: '2026-11-01T08:00:00.000Z',
     allowPartSelection: true,
     availableDurationOptions: [15, 30, 45, 60, 90, 120],
@@ -1113,8 +1084,152 @@ export const mockTests: Test[] = [
     scoreConversionTable: DEFAULT_SCORE_CONVERSION_TABLE,
   },
   {
+    id: 'test-2026-05',
+    code: 'ETS-2026-T05',
+    title: 'TEST 5 – 2026',
+    slug: 'toeic-test-05-2026',
+    collectionGroup: '2026 (New)',
+    skillCategory: 'listening_reading',
+    description: 'Đề luyện thi TOEIC số 05 bộ đề mới 2026.',
+    thumbnail: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=900',
+    difficulty: 'Chuẩn ETS (700+)',
+    testType: 'Full Test 7 Parts',
+    duration: 120,
+    totalQuestions: 23,
+    standardTotalQuestions: 200,
+    attemptsCount: 94366,
+    createdAt: '2026-10-29T08:00:00.000Z',
+    allowPartSelection: true,
+    availableDurationOptions: [15, 30, 45, 60, 90, 120],
+    status: 'published',
+    generalInstructions: ['Làm bài trên trình duyệt Google Chrome để đạt độ ổn định tốt nhất.'],
+    sampleCheckAudioUrl: SAMPLE_SPEAKER_CHECK_AUDIO,
+    parts: buildStandardParts('t05', true),
+    scoreConversionTable: DEFAULT_SCORE_CONVERSION_TABLE,
+  },
+  {
+    id: 'test-2026-06',
+    code: 'ETS-2026-T06',
+    title: 'TEST 6 – 2026',
+    slug: 'toeic-test-06-2026',
+    collectionGroup: '2026 (New)',
+    skillCategory: 'listening_reading',
+    description: 'Đề luyện thi TOEIC số 06 bộ đề mới 2026.',
+    thumbnail: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=900',
+    difficulty: 'Chuẩn ETS (700+)',
+    testType: 'Full Test 7 Parts',
+    duration: 120,
+    totalQuestions: 23,
+    standardTotalQuestions: 200,
+    attemptsCount: 84781,
+    createdAt: '2026-10-27T08:00:00.000Z',
+    allowPartSelection: true,
+    availableDurationOptions: [15, 30, 45, 60, 90, 120],
+    status: 'published',
+    generalInstructions: ['Làm bài trên trình duyệt Google Chrome để đạt độ ổn định tốt nhất.'],
+    sampleCheckAudioUrl: SAMPLE_SPEAKER_CHECK_AUDIO,
+    parts: buildStandardParts('t06', true),
+    scoreConversionTable: DEFAULT_SCORE_CONVERSION_TABLE,
+  },
+  {
+    id: 'test-2026-07',
+    code: 'ETS-2026-T07',
+    title: 'TEST 7 – 2026',
+    slug: 'toeic-test-07-2026',
+    collectionGroup: '2026 (New)',
+    skillCategory: 'listening_reading',
+    description: 'Đề luyện thi TOEIC số 07 bộ đề mới 2026.',
+    thumbnail: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=900',
+    difficulty: 'Chuẩn ETS (700+)',
+    testType: 'Full Test 7 Parts',
+    duration: 120,
+    totalQuestions: 23,
+    standardTotalQuestions: 200,
+    attemptsCount: 75501,
+    createdAt: '2026-10-25T08:00:00.000Z',
+    allowPartSelection: true,
+    availableDurationOptions: [15, 30, 45, 60, 90, 120],
+    status: 'published',
+    generalInstructions: ['Làm bài trên trình duyệt Google Chrome để đạt độ ổn định tốt nhất.'],
+    sampleCheckAudioUrl: SAMPLE_SPEAKER_CHECK_AUDIO,
+    parts: buildStandardParts('t07', true),
+    scoreConversionTable: DEFAULT_SCORE_CONVERSION_TABLE,
+  },
+  {
+    id: 'test-2026-08',
+    code: 'ETS-2026-T08',
+    title: 'TEST 8 – 2026',
+    slug: 'toeic-test-08-2026',
+    collectionGroup: '2026 (New)',
+    skillCategory: 'listening_reading',
+    description: 'Đề luyện thi TOEIC số 08 bộ đề mới 2026.',
+    thumbnail: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=900',
+    difficulty: 'Chuẩn ETS (700+)',
+    testType: 'Full Test 7 Parts',
+    duration: 120,
+    totalQuestions: 23,
+    standardTotalQuestions: 200,
+    attemptsCount: 70183,
+    createdAt: '2026-10-23T08:00:00.000Z',
+    allowPartSelection: true,
+    availableDurationOptions: [15, 30, 45, 60, 90, 120],
+    status: 'published',
+    generalInstructions: ['Làm bài trên trình duyệt Google Chrome để đạt độ ổn định tốt nhất.'],
+    sampleCheckAudioUrl: SAMPLE_SPEAKER_CHECK_AUDIO,
+    parts: buildStandardParts('t08', true),
+    scoreConversionTable: DEFAULT_SCORE_CONVERSION_TABLE,
+  },
+  {
+    id: 'test-2026-09',
+    code: 'ETS-2026-T09',
+    title: 'TEST 9 – 2026',
+    slug: 'toeic-test-09-2026',
+    collectionGroup: '2026 (New)',
+    skillCategory: 'listening_reading',
+    description: 'Đề luyện thi TOEIC số 09 bộ đề mới 2026.',
+    thumbnail: 'https://images.unsplash.com/photo-1513258496099-48168024aec0?w=900',
+    difficulty: 'Chuẩn ETS (700+)',
+    testType: 'Full Test 7 Parts',
+    duration: 120,
+    totalQuestions: 23,
+    standardTotalQuestions: 200,
+    attemptsCount: 69340,
+    createdAt: '2026-10-22T08:00:00.000Z',
+    allowPartSelection: true,
+    availableDurationOptions: [15, 30, 45, 60, 90, 120],
+    status: 'published',
+    generalInstructions: ['Làm bài trên trình duyệt Google Chrome để đạt độ ổn định tốt nhất.'],
+    sampleCheckAudioUrl: SAMPLE_SPEAKER_CHECK_AUDIO,
+    parts: buildStandardParts('t09', true),
+    scoreConversionTable: DEFAULT_SCORE_CONVERSION_TABLE,
+  },
+  {
+    id: 'test-2026-10',
+    code: 'ETS-2026-T10',
+    title: 'TEST 10 – 2026',
+    slug: 'toeic-test-10-2026',
+    collectionGroup: '2026 (New)',
+    skillCategory: 'listening_reading',
+    description: 'Đề luyện thi TOEIC số 10 bộ đề mới 2026.',
+    thumbnail: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=900',
+    difficulty: 'Chuẩn ETS (700+)',
+    testType: 'Full Test 7 Parts',
+    duration: 120,
+    totalQuestions: 23,
+    standardTotalQuestions: 200,
+    attemptsCount: 86168,
+    createdAt: '2026-10-21T08:00:00.000Z',
+    allowPartSelection: true,
+    availableDurationOptions: [15, 30, 45, 60, 90, 120],
+    status: 'published',
+    generalInstructions: ['Làm bài trên trình duyệt Google Chrome để đạt độ ổn định tốt nhất.'],
+    sampleCheckAudioUrl: SAMPLE_SPEAKER_CHECK_AUDIO,
+    parts: buildStandardParts('t10', true),
+    scoreConversionTable: DEFAULT_SCORE_CONVERSION_TABLE,
+  },
+  {
     id: 'test-2025-01',
-    code: 'HMC-2025-T01',
+    code: 'EC-2025-T01',
     title: 'TEST 1 – 2025 (Nền tảng 450+)',
     slug: 'toeic-test-01-2025',
     collectionGroup: '2025 Core Collection',
@@ -1125,7 +1240,7 @@ export const mockTests: Test[] = [
     difficulty: 'Cơ bản (350+)',
     testType: 'Mini Test',
     duration: 60,
-    totalQuestions: 18,
+    totalQuestions: 23,
     standardTotalQuestions: 100,
     attemptsCount: 93914,
     createdAt: '2026-10-20T08:00:00.000Z',
@@ -1136,12 +1251,12 @@ export const mockTests: Test[] = [
       'Đề nền tảng có thời gian mặc định 60 phút, phù hợp cho học viên mới bắt đầu luyện giải đề.',
     ],
     sampleCheckAudioUrl: SAMPLE_SPEAKER_CHECK_AUDIO,
-    parts: buildStandardParts('t05', true),
+    parts: buildStandardParts('t11', true),
     scoreConversionTable: DEFAULT_SCORE_CONVERSION_TABLE,
   },
   {
     id: 'test-2025-02',
-    code: 'HMC-2025-T02',
+    code: 'EC-2025-T02',
     title: 'TEST 2 – 2025 (Chuyên sâu 700+)',
     slug: 'toeic-test-02-2025',
     collectionGroup: '2025 Core Collection',
@@ -1152,7 +1267,7 @@ export const mockTests: Test[] = [
     difficulty: 'Chuẩn ETS (700+)',
     testType: 'Luyện chuyên sâu',
     duration: 90,
-    totalQuestions: 18,
+    totalQuestions: 23,
     standardTotalQuestions: 200,
     attemptsCount: 84310,
     createdAt: '2026-10-10T08:00:00.000Z',
@@ -1163,7 +1278,7 @@ export const mockTests: Test[] = [
       'Trong đề kiểm tra định kỳ này, Part 3 và Part 4 được cấu hình khóa chọn lẻ khi tự chọn Part để minh họa quyền cấu hình của Admin.',
     ],
     sampleCheckAudioUrl: SAMPLE_SPEAKER_CHECK_AUDIO,
-    parts: buildStandardParts('t06', false),
+    parts: buildStandardParts('t12', false),
     scoreConversionTable: DEFAULT_SCORE_CONVERSION_TABLE,
   },
 ]
@@ -1175,4 +1290,10 @@ export const serverTestAnswerKeys: Record<string, ServerTestAnswerKey> = {
   ...buildAnswerKeysForPrefix('t04'),
   ...buildAnswerKeysForPrefix('t05'),
   ...buildAnswerKeysForPrefix('t06'),
+  ...buildAnswerKeysForPrefix('t07'),
+  ...buildAnswerKeysForPrefix('t08'),
+  ...buildAnswerKeysForPrefix('t09'),
+  ...buildAnswerKeysForPrefix('t10'),
+  ...buildAnswerKeysForPrefix('t11'),
+  ...buildAnswerKeysForPrefix('t12'),
 }

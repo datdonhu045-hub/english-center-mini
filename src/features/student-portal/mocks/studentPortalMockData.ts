@@ -1,3 +1,5 @@
+import { branches } from '@/features/about/mocks/branches';
+import { courses } from '@/features/courses/mocks';
 import type {
   AssignmentItem,
   AssignmentSubmission,
@@ -31,7 +33,7 @@ function addDays(base: Date, days: number): Date {
   return next;
 }
 
-const DOC_BASE_URL = 'https://drive.google.com/drive/folders/hmc-toeic-';
+const DOC_BASE_URL = 'https://drive.google.com/drive/folders/english-center-';
 
 const GENERAL_RESOURCES: LearningResource[] = [
   {
@@ -91,27 +93,32 @@ function getSeedConfigForStudent(
   // Mặc định khóa học khai giảng ngày 12/10/2026 như bản mẫu
   const startObj = new Date(2026, 9, 12);
 
+  const submarineCourse = courses.find((c) => c.id === 'submarine-toeic');
+  const haDongBranch = branches.find((b) => b.id === 'cs-ha-dong');
+  const canonicalCourseName = submarineCourse?.name ?? 'SUBMARINE TOEIC 700+';
+  const canonicalBranchName = haDongBranch?.name ?? 'Cơ sở 1 – Hà Đông';
+
   if (studentId === 'stu-002') {
     return {
       student: {
         id: 'stu-002',
         studentCode: 'HV-2026-002',
         fullName: fallbackUser?.fullName || 'Nguyễn Minh Anh',
-        email: fallbackUser?.email || 'minhanh@student.hmctoeic.edu.vn',
+        email: fallbackUser?.email || 'minhanh@student.englishcenter.edu.vn',
         phone: fallbackUser?.phone || '0912345678',
         entryScore: { lc: 290, rc: 270, total: 560 },
         goalScore: { lc: 405, rc: 350, total: 755 },
       },
       classInfo: {
-        id: 'cls-hmc-s01',
-        classCode: 'HMC-S01',
+        id: 'cls-ec-s01',
+        classCode: 'EC-S01',
         courseId: 'submarine-toeic',
-        courseName: 'Submarine 700+',
+        courseName: canonicalCourseName,
         teacherName: 'Cô Lan Hương',
-        branchName: 'Cơ sở 1 – Cầu Giấy (mẫu)',
+        branchName: canonicalBranchName,
         scheduleDays: 'Thứ 2, 4, 6',
         scheduleTime: '18:00–20:00',
-        roomName: 'Phòng 2 (mẫu)',
+        roomName: 'Phòng 201',
         startDate: toIsoDate(startObj),
         endDate: toIsoDate(addDays(startObj, 7 * 7 + 4)),
         totalWeeks: 8,
@@ -128,21 +135,21 @@ function getSeedConfigForStudent(
         id: 'stu-001',
         studentCode: 'HV-2026-001',
         fullName: fallbackUser?.fullName || 'Đỗ Như Đạt',
-        email: fallbackUser?.email || 'dat.donhu@student.hmctoeic.edu.vn',
+        email: fallbackUser?.email || 'dat.donhu@student.englishcenter.edu.vn',
         phone: fallbackUser?.phone || '0987654321',
         entryScore: { lc: 290, rc: 270, total: 560 },
         goalScore: { lc: 405, rc: 350, total: 755 },
       },
       classInfo: {
-        id: 'cls-hmc-s01',
-        classCode: 'HMC-S01',
+        id: 'cls-ec-s01',
+        classCode: 'EC-S01',
         courseId: 'submarine-toeic',
-        courseName: 'Submarine 700+',
+        courseName: canonicalCourseName,
         teacherName: 'Cô Lan Hương',
-        branchName: 'Cơ sở 1 – Cầu Giấy (mẫu)',
+        branchName: canonicalBranchName,
         scheduleDays: 'Thứ 2, 4, 6',
         scheduleTime: '18:00–20:00',
-        roomName: 'Phòng 2 (mẫu)',
+        roomName: 'Phòng 201',
         startDate: toIsoDate(startObj),
         endDate: toIsoDate(addDays(startObj, 7 * 7 + 4)),
         totalWeeks: 8,
@@ -158,8 +165,8 @@ function getSeedConfigForStudent(
     student: {
       id: studentId,
       studentCode: `HV-${studentId.slice(-4).toUpperCase()}`,
-      fullName: fallbackUser?.fullName || 'Học viên HMC TOEIC',
-      email: fallbackUser?.email || 'student@hmctoeic.edu.vn',
+      fullName: fallbackUser?.fullName || 'Học viên English Center',
+      email: fallbackUser?.email || 'student@englishcenter.edu.vn',
       phone: fallbackUser?.phone || '0900000000',
       entryScore: { lc: 0, rc: 0, total: 0 },
       goalScore: { lc: 300, rc: 250, total: 550 },
@@ -281,11 +288,11 @@ function buildSessionsAndAssignments(startDateObj: Date): {
 }
 
 function getStorageKeyForSubmissions(studentId: string): string {
-  return `hmc_portal_submissions_v1_${studentId}`;
+  return `ec_portal_submissions_v2_${studentId}`;
 }
 
 function getStorageKeyForSupportRequests(studentId: string): string {
-  return `hmc_portal_support_requests_v1_${studentId}`;
+  return `ec_portal_support_requests_v2_${studentId}`;
 }
 
 function buildInitialSubmissions(

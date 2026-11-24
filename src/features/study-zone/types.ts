@@ -43,16 +43,24 @@ export type QuestionContentBlock =
 export interface QuestionOption {
   id: string
   label: string // "A", "B", "C", "D"
-  content: QuestionContentBlock[]
+  text?: string
+  imageUrl?: string
+  audioUrl?: string
+  content?: QuestionContentBlock[]
 }
 
 /**
  * Dữ liệu câu hỏi gửi xuống Frontend khi học viên ĐANG LÀM BÀI.
- * Tuyệt đối KHÔNG chứa đáp án đúng (correctOptionId) hay giải thích (explanation).
+ * Hỗ trợ đồng nhất 3 trường `questionText` + `audioUrl` + `imageUrl` (khuyết phần nào tự động bỏ qua phần đó nhưng vẫn giữ nguyên khung).
  */
 export interface Question {
   id: string
-  content: QuestionContentBlock[]
+  questionText?: string
+  audioUrl?: string
+  audioDurationSeconds?: number
+  imageUrl?: string
+  imageAlt?: string
+  content?: QuestionContentBlock[]
   questionType: 'single_choice'
   options: QuestionOption[]
   difficulty?: string
@@ -96,6 +104,12 @@ export interface ExerciseSummaryItem {
   questionCount: number
   durationMinutes?: number
   level: StudyLevel
+}
+
+export interface StudySubTopicItem {
+  id: string
+  title: string
+  exercises: ExerciseSummaryItem[]
 }
 
 export interface SubmitExercisePayload {
@@ -184,4 +198,6 @@ export interface StudyTopic {
 
   // Danh sách bài tập tương tác thuộc chủ đề (VD: TEST 1, TEST 2, TEST 3)
   exercises: ExerciseSummaryItem[]
+  // Danh sách chủ điểm con lồng bên trong (VD: THÀNH PHẦN CÂU, CẤU TRÚC CÂU -> Test 1..Test 5)
+  subTopics?: StudySubTopicItem[]
 }

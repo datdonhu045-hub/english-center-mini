@@ -68,7 +68,7 @@ export function ResetPasswordPage() {
               Đặt lại mật khẩu mới
             </h1>
             <p className="mt-1 text-[13.5px] leading-relaxed text-[#718096]">
-              Thiết lập mật khẩu mới cho tài khoản học viên HMC TOEIC của bạn.
+              Thiết lập mật khẩu mới cho tài khoản học viên English Center của bạn.
             </p>
           </div>
 

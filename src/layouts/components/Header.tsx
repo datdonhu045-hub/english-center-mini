@@ -13,9 +13,9 @@ export default function Header() {
   const { pathname } = useLocation()
 
   return (
-    <div className="ec-font w-full">
-      {/* Topbar */}
-      <div className="border-b border-[var(--ec-border)] bg-white px-4 py-1.5 text-sm text-[var(--ec-text)] lg:px-8">
+    <>
+      {/* Topbar đặt z-[60] cao hơn thanh Header xanh bên dưới để menu tài khoản luôn nổi lên trên */}
+      <div className="ec-font relative z-[60] w-full border-b border-[var(--ec-border)] bg-white px-4 py-1.5 text-sm text-[var(--ec-text)] lg:px-8">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <a
             href={centerInfo.hotlineHref}
@@ -34,8 +34,8 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Header chính */}
-      <header className="sticky top-0 z-40 bg-[var(--ec-main)] shadow-md">
+      {/* Header chính luôn bám dính ở đầu màn hình khi cuộn xuống */}
+      <header className="ec-font sticky top-0 z-40 w-full bg-[var(--ec-main)] shadow-md">
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-4 px-4 lg:px-6 xl:gap-6">
           <Link to="/" className="flex shrink-0 select-none flex-col pr-1">
             <span className="whitespace-nowrap text-xl font-extrabold uppercase tracking-tight text-white ec-shadow-text sm:text-2xl">
@@ -175,6 +175,6 @@ export default function Header() {
           </nav>
         )}
       </header>
-    </div>
+    </>
   )
 }

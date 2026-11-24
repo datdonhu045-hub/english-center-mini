@@ -1,6 +1,11 @@
 import { authSessionStore } from '@/features/auth/services/authService'
 import { mockTests } from '@/features/test-online/mocks/testMockData'
 import { gradeTestAttempt } from '@/features/test-online/services/scoringService'
+import {
+  isMultiQuestionSharedGroup,
+  normalizeGroupMedia,
+  normalizeQuestionMedia,
+} from '@/features/test-online/utils/questionMedia'
 import type {
   AudioGroupState,
   AudioPlaybackStatus,
@@ -11,11 +16,10 @@ import type {
   ToeicPartNumber,
 } from '@/features/test-online/types/test.types'
 
-const ATTEMPTS_STORAGE_KEY = 'ec_toeic_test_attempts_v2'
-const RESULTS_STORAGE_KEY = 'ec_toeic_test_results_v2'
-const SEEDED_FLAG_KEY = 'ec_toeic_test_seeded_v2'
+const ATTEMPTS_STORAGE_KEY = 'ec_toeic_test_attempts_v3'
+const RESULTS_STORAGE_KEY = 'ec_toeic_test_results_v3'
+const SEEDED_FLAG_KEY = 'ec_toeic_test_seeded_v5'
 
-// Bộ nhớ đệm dự phòng trong RAM phòng trường hợp LocalStorage của trình duyệt bị đầy quota
 const memoryAttemptsFallback: Record<string, TestAttempt> = {}
 const memoryResultsFallback: Record<string, TestAttemptResult> = {}
 
@@ -43,12 +47,11 @@ function safeWriteJson<T extends Record<string, unknown>>(
   try {
     window.localStorage.setItem(key, JSON.stringify(value))
   } catch {
-    // Nếu LocalStorage bị đầy do các bản ghi cũ lưu chuỗi audio dài, tự động dọn bớt audioUrl và lưu lại
     try {
       window.localStorage.removeItem(key)
       window.localStorage.setItem(key, JSON.stringify(value))
     } catch {
-      // Đã có memoryStore giữ dữ liệu trong phiên làm việc hiện tại
+      // Đã có memoryStore giữ dữ liệu trong phiên hiện tại
     }
   }
 }
@@ -56,6 +59,7 @@ function safeWriteJson<T extends Record<string, unknown>>(
 function buildInitialAudioStates(
   test: Test,
   selectedParts: ToeicPartNumber[],
+  initialStatus: AudioPlaybackStatus = 'NOT_PLAYED',
 ): Record<string, AudioGroupState> {
   const states: Record<string, AudioGroupState> = {}
   const selectedSet = new Set(selectedParts)
@@ -63,15 +67,34 @@ function buildInitialAudioStates(
   for (const part of test.parts) {
     if (!selectedSet.has(part.partNumber) || part.section !== 'listening') continue
     for (const group of part.questionGroups) {
-      const audioBlock = group.stimulus.find((b) => b.type === 'audio')
-      if (!audioBlock || audioBlock.type !== 'audio') continue
-      const groupId = group.audioGroupId ?? group.id
-      states[groupId] = {
-        audioGroupId: groupId,
-        partNumber: part.partNumber,
-        // Không lưu chuỗi base64 WAV dài vào LocalStorage để tránh tràn bộ nhớ 5MB của trình duyệt
-        audioUrl: '',
-        status: 'NOT_PLAYED',
+      if (isMultiQuestionSharedGroup(group)) {
+        const gMedia = normalizeGroupMedia(group)
+        if (gMedia.audios.length > 0) {
+          const groupId = group.audioGroupId ?? group.id
+          states[groupId] = {
+            audioGroupId: groupId,
+            partNumber: part.partNumber,
+            audioUrl: '',
+            status: initialStatus,
+          }
+        }
+      } else {
+        for (const q of group.questions) {
+          const qMedia = normalizeQuestionMedia(q)
+          const gMedia = normalizeGroupMedia(group)
+          if (qMedia.audios.length > 0 || gMedia.audios.length > 0) {
+            const audioKey =
+              qMedia.audios.length > 0 && gMedia.audios.length === 0
+                ? q.id
+                : (group.audioGroupId ?? group.id)
+            states[audioKey] = {
+              audioGroupId: audioKey,
+              partNumber: part.partNumber,
+              audioUrl: '',
+              status: initialStatus,
+            }
+          }
+        }
       }
     }
   }
@@ -79,16 +102,51 @@ function buildInitialAudioStates(
   return states
 }
 
-/**
- * Khởi tạo 2 lượt thi mẫu trong lịch sử (Lần 1 và Lần 2 của TEST 1 – 2026)
- * để trang Lịch sử làm bài (/test-history) có sẵn dữ liệu đối chiếu tiến bộ của học viên.
- */
+function buildSampleAnswers(prefix: string, wrongCount: number): Record<string, string> {
+  const correctChoices: Array<[number, string]> = [
+    [1, 'b'],
+    [2, 'c'],
+    [3, 'a'],
+    [4, 'b'],
+    [5, 'b'],
+    [6, 'b'],
+    [7, 'a'],
+    [8, 'a'],
+    [9, 'c'],
+    [10, 'b'],
+    [11, 'a'],
+    [12, 'b'],
+    [13, 'b'],
+    [14, 'a'],
+    [15, 'a'],
+    [16, 'b'],
+    [17, 'c'],
+    [18, 'a'],
+    [19, 'a'],
+    [20, 'a'],
+    [21, 'b'],
+    [22, 'c'],
+    [23, 'a'],
+  ]
+
+  const answers: Record<string, string> = {}
+  correctChoices.forEach(([num, rightLetter], index) => {
+    const chosen =
+      index < wrongCount ? (rightLetter === 'a' ? 'c' : 'a') : rightLetter
+    answers[`${prefix}-q${num}`] = `${prefix}-q${num}-${chosen}`
+  })
+  return answers
+}
+
 function ensureSeededSampleHistory(): void {
   if (typeof window === 'undefined') return
   const alreadySeeded = window.localStorage.getItem(SEEDED_FLAG_KEY)
   if (alreadySeeded) return
 
   const test1 = mockTests[0]
+  const test2 = mockTests[1]
+  const test3 = mockTests[2]
+  const test4 = mockTests[3]
   if (!test1) return
 
   const existingAttempts = safeReadJson<Record<string, TestAttempt>>(
@@ -102,88 +160,121 @@ function ensureSeededSampleHistory(): void {
     memoryResultsFallback,
   )
 
-  const attempt1Id = 'ATT-20261110-101'
-  const attempt1: TestAttempt = {
-    id: attempt1Id,
-    studentId: 'stu-001',
-    testId: test1.id,
-    testSlug: test1.slug,
-    testCode: test1.code,
-    testTitle: test1.title,
-    practiceMode: 'full',
-    selectedParts: [1, 2, 3, 4, 5, 6, 7],
-    selectedDuration: 120,
-    startedAt: '2026-11-10T14:00:00.000Z',
-    deadlineAt: '2026-11-10T16:00:00.000Z',
-    submittedAt: '2026-11-10T14:48:20.000Z',
-    status: 'submitted',
-    answers: {
-      't01-q1': 't01-q1-b',
-      't01-q2': 't01-q2-c',
-      't01-q3': 't01-q3-a',
-      't01-q4': 't01-q4-a',
-      't01-q5': 't01-q5-b',
-      't01-q6': 't01-q6-b',
-      't01-q7': 't01-q7-c',
-      't01-q8': 't01-q8-a',
-      't01-q9': 't01-q9-c',
-      't01-q10': 't01-q10-b',
-      't01-q11': 't01-q11-a',
-      't01-q12': 't01-q12-b',
-      't01-q13': 't01-q13-a',
-      't01-q14': 't01-q14-a',
-      't01-q15': 't01-q15-a',
-      't01-q16': 't01-q16-b',
-      't01-q17': 't01-q17-c',
-      't01-q18': 't01-q18-b',
+  const seedSpecs: Array<{
+    id: string
+    studentId: string
+    test: Test
+    prefix: string
+    startedAt: string
+    deadlineAt: string
+    submittedAt: string
+    wrongCount: number
+  }> = [
+    {
+      id: 'ATT-20261112-101',
+      studentId: 'stu-001',
+      test: test1,
+      prefix: 't01',
+      startedAt: '2026-11-12T14:00:00+07:00',
+      deadlineAt: '2026-11-12T16:00:00+07:00',
+      submittedAt: '2026-11-12T15:55:00+07:00',
+      wrongCount: 6,
     },
-    flaggedQuestionIds: ['t01-q7', 't01-q13'],
-    audioStates: buildInitialAudioStates(test1, [1, 2, 3, 4, 5, 6, 7]),
-    introducedParts: [1, 2, 3, 4, 5, 6, 7],
-    currentPartNumber: 7,
-    currentStage: 'questions',
-    listeningCompleted: true,
-  }
-  const result1 = gradeTestAttempt(test1, attempt1, 'submitted', attempt1.submittedAt!)
-
-  const attempt2Id = 'ATT-20261116-205'
-  const attempt2: TestAttempt = {
-    id: attempt2Id,
-    studentId: 'stu-001',
-    testId: test1.id,
-    testSlug: test1.slug,
-    testCode: test1.code,
-    testTitle: test1.title,
-    practiceMode: 'custom_parts',
-    selectedParts: [5, 6, 7],
-    selectedDuration: 45,
-    startedAt: '2026-11-16T19:30:00.000Z',
-    deadlineAt: '2026-11-16T20:15:00.000Z',
-    submittedAt: '2026-11-16T19:52:10.000Z',
-    status: 'submitted',
-    answers: {
-      't01-q11': 't01-q11-a',
-      't01-q12': 't01-q12-b',
-      't01-q13': 't01-q13-b',
-      't01-q14': 't01-q14-a',
-      't01-q15': 't01-q15-a',
-      't01-q16': 't01-q16-b',
-      't01-q17': 't01-q17-c',
-      't01-q18': 't01-q18-a',
+    {
+      id: 'ATT-20261120-202',
+      studentId: 'stu-001',
+      test: test1,
+      prefix: 't01',
+      startedAt: '2026-11-20T09:00:00+07:00',
+      deadlineAt: '2026-11-20T11:00:00+07:00',
+      submittedAt: '2026-11-20T10:50:00+07:00',
+      wrongCount: 2,
     },
-    flaggedQuestionIds: [],
-    audioStates: {},
-    introducedParts: [5, 6, 7],
-    currentPartNumber: 7,
-    currentStage: 'questions',
-    listeningCompleted: true,
-  }
-  const result2 = gradeTestAttempt(test1, attempt2, 'submitted', attempt2.submittedAt!)
+  ]
 
-  existingAttempts[attempt1Id] = attempt1
-  existingAttempts[attempt2Id] = attempt2
-  existingResults[attempt1Id] = result1
-  existingResults[attempt2Id] = result2
+  if (test2) {
+    seedSpecs.push(
+      {
+        id: 'ATT-20261118-301',
+        studentId: 'stu-001',
+        test: test2,
+        prefix: 't02',
+        startedAt: '2026-11-18T14:00:00+07:00',
+        deadlineAt: '2026-11-18T16:00:00+07:00',
+        submittedAt: '2026-11-18T15:45:00+07:00',
+        wrongCount: 4,
+      },
+      {
+        id: 'ATT-20261119-601',
+        studentId: 'stu-002',
+        test: test2,
+        prefix: 't02',
+        startedAt: '2026-11-19T19:00:00+07:00',
+        deadlineAt: '2026-11-19T21:00:00+07:00',
+        submittedAt: '2026-11-19T20:50:00+07:00',
+        wrongCount: 3,
+      },
+    )
+  }
+
+  if (test3) {
+    seedSpecs.push({
+      id: 'ATT-20261115-401',
+      studentId: 'stu-001',
+      test: test3,
+      prefix: 't03',
+      startedAt: '2026-11-15T08:30:00+07:00',
+      deadlineAt: '2026-11-15T10:30:00+07:00',
+      submittedAt: '2026-11-15T10:30:00+07:00',
+      wrongCount: 8,
+    })
+  }
+
+  if (test4) {
+    seedSpecs.push({
+      id: 'ATT-20261110-501',
+      studentId: 'stu-001',
+      test: test4,
+      prefix: 't04',
+      startedAt: '2026-11-10T19:00:00+07:00',
+      deadlineAt: '2026-11-10T21:00:00+07:00',
+      submittedAt: '2026-11-10T20:50:00+07:00',
+      wrongCount: 6,
+    })
+  }
+
+  for (const spec of seedSpecs) {
+    const allParts: ToeicPartNumber[] = [1, 2, 3, 4, 5, 6, 7]
+    const att: TestAttempt = {
+      id: spec.id,
+      studentId: spec.studentId,
+      testId: spec.test.id,
+      testSlug: spec.test.slug,
+      testCode: spec.test.code,
+      testTitle: spec.test.title,
+      practiceMode: 'full',
+      selectedParts: allParts,
+      selectedDuration: 120,
+      startedAt: spec.startedAt,
+      deadlineAt: spec.deadlineAt,
+      submittedAt: spec.submittedAt,
+      status: 'submitted',
+      answers: buildSampleAnswers(spec.prefix, spec.wrongCount),
+      flaggedQuestionIds: [],
+      audioStates: buildInitialAudioStates(spec.test, allParts, 'LOCKED'),
+      introducedParts: allParts,
+      currentPartNumber: 7,
+      currentStage: 'questions',
+      listeningCompleted: true,
+    }
+    existingAttempts[spec.id] = att
+    existingResults[spec.id] = gradeTestAttempt(
+      spec.test,
+      att,
+      'submitted',
+      spec.submittedAt,
+    )
+  }
 
   safeWriteJson(ATTEMPTS_STORAGE_KEY, existingAttempts, memoryAttemptsFallback)
   safeWriteJson(RESULTS_STORAGE_KEY, existingResults, memoryResultsFallback)
@@ -202,7 +293,6 @@ export const attemptStorageService = {
       {},
       memoryAttemptsFallback,
     )
-    // Tự động làm sạch các chuỗi audioUrl base64 cũ nếu đã lưu trong LocalStorage trước đó
     let cleaned = false
     for (const att of Object.values(rawMap)) {
       if (att.audioStates) {
@@ -268,12 +358,11 @@ export const attemptStorageService = {
       selectedDuration: payload.selectedDuration,
       startedAt,
       deadlineAt,
-      // Bắt đầu ở màn hình giới thiệu Part đầu tiên -> đồng hồ tạm dừng, chỉ tính giờ khi nhấn Bắt đầu Part
       timerPausedAt: startedAt,
       status: 'in_progress',
       answers: {},
       flaggedQuestionIds: [],
-      audioStates: buildInitialAudioStates(test, sortedParts),
+      audioStates: buildInitialAudioStates(test, sortedParts, 'NOT_PLAYED'),
       introducedParts: [],
       currentPartNumber: firstPart,
       currentStage: 'part_intro',
@@ -295,7 +384,6 @@ export const attemptStorageService = {
     const currentGroup = attempt.audioStates[audioGroupId]
     if (!currentGroup) return attempt
 
-    // Quy tắc bất biến: Đã LOCKED hoặc COMPLETED thì không bao giờ quay lại PLAYING hay NOT_PLAYED
     if (
       (currentGroup.status === 'LOCKED' || currentGroup.status === 'COMPLETED') &&
       (nextStatus === 'PLAYING' || nextStatus === 'NOT_PLAYED')
@@ -320,7 +408,6 @@ export const attemptStorageService = {
       [audioGroupId]: updatedGroup,
     }
 
-    // Kiểm tra xem tất cả các nhóm audio Listening đã LOCKED hết chưa
     const allListeningGroups = Object.values(nextAudioStates)
     const allDone =
       allListeningGroups.length === 0 ||
@@ -347,7 +434,6 @@ export const attemptStorageService = {
     }
 
     const existingResults = this.getAllResultsMap()
-    // Không cho phép nộp lại / ghi đè một lượt thi đã hoàn thành
     if (attempt.status !== 'in_progress' && existingResults[attemptId]) {
       return existingResults[attemptId]
     }

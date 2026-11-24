@@ -179,7 +179,7 @@ export function AuthPage({ defaultTab = 'login' }: AuthPageProps) {
 
   const fillDemoAccount = (identifier: string) => {
     setLoginIdentifier(identifier);
-    setLoginPassword('HmcToeic123');
+    setLoginPassword('English123');
     setLoginErrors({});
   };
 
@@ -226,7 +226,7 @@ export function AuthPage({ defaultTab = 'login' }: AuthPageProps) {
                 Đăng nhập
               </h1>
               <p className="mt-1 text-[13.5px] text-[#718096]">
-                Chào mừng bạn quay lại hệ thống học tập HMC TOEIC.
+                Chào mừng bạn quay lại hệ thống học tập English Center.
               </p>
             </div>
 

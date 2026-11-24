@@ -6,6 +6,8 @@ import {
   Home,
   Trophy,
 } from 'lucide-react';
+import { centerInfo } from '@/config/center-info';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import UserAccountDropdown from '@/features/auth/components/UserAccountDropdown';
 import { useStudentPortalData } from '@/features/student-portal/hooks/useStudentPortal';
@@ -48,6 +50,7 @@ export default function StudentLayout() {
   const { user, isAuthenticated } = useAuth();
   const location = useLocation();
   const { data } = useStudentPortalData();
+  usePageTitle('Cổng học viên');
 
   if (!isAuthenticated || !user) {
     return (
@@ -78,11 +81,11 @@ export default function StudentLayout() {
             <div className="flex flex-wrap items-center justify-between gap-2.5 py-2.5">
               <div className="flex items-center gap-4">
                 <Link to="/student/dashboard" className="block select-none">
-                  <b className="block text-[20px] font-bold leading-tight text-[#2878B8]">
-                    HMC TOEIC
+                  <b className="block text-[20px] font-extrabold uppercase leading-tight tracking-tight text-[#2878B8]">
+                    <span className="text-[#F26522]">E</span>NGLISH CENTER
                   </b>
-                  <small className="block text-[11px] text-[#718096]">
-                    Chỉ cần cố gắng - Học là đỗ
+                  <small className="block text-[11px] font-medium text-[#718096]">
+                    {centerInfo.slogan}
                   </small>
                 </Link>
 

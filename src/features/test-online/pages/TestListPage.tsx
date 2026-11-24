@@ -1,211 +1,204 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { History, LayoutGrid, ListOrdered, Sparkles } from 'lucide-react'
+import { BookOpen, GraduationCap, Headphones, History, MousePointerClick } from 'lucide-react'
 import PageBanner from '@/components/ui/PageBanner'
-import FilterBar from '@/components/ui/FilterBar'
-import Pagination from '@/components/ui/Pagination'
 import { EmptyBlock, ErrorBlock, LoadingBlock } from '@/components/ui/StateViews'
+import { CONSULTATION_SECTION_ID, centerInfo } from '@/config/center-info'
+import { usePageTitle } from '@/hooks/usePageTitle'
 import { useTests } from '@/features/test-online/hooks/useTests'
-import { TestCard, TestCollectionTimeline } from '@/features/test-online/components/TestCard'
-import { matchText, paginate } from '@/utils/format'
-
-const PAGE_SIZE = 6
+import { TestCollectionTimeline } from '@/features/test-online/components/TestCard'
+import type { TestSkillCategory } from '@/features/test-online/types/test.types'
 
 export default function TestListPage() {
+  usePageTitle('Test Online – Luyện thi TOEIC trực tuyến')
   const { data, loading, error, retry } = useTests()
-  const [keyword, setKeyword] = useState('')
-  const [difficultyFilter, setDifficultyFilter] = useState('')
-  const [typeFilter, setTypeFilter] = useState('')
-  const [sortOrder, setSortOrder] = useState('Mới nhất')
-  const [viewMode, setViewMode] = useState<'cards' | 'timeline'>('timeline')
-  const [page, setPage] = useState(1)
+  const [skillTab, setSkillTab] = useState<TestSkillCategory>('listening_reading')
 
   const tests = useMemo(() => data ?? [], [data])
 
-  const difficulties = useMemo(
-    () => Array.from(new Set(tests.map((t) => t.difficulty))),
-    [tests],
+  const filteredTests = useMemo(
+    () => tests.filter((t) => t.skillCategory === skillTab),
+    [tests, skillTab],
   )
-  const testTypes = useMemo(() => Array.from(new Set(tests.map((t) => t.testType))), [tests])
 
-  const filteredTests = useMemo(() => {
-    const matched = tests.filter((t) => {
-      if (difficultyFilter && t.difficulty !== difficultyFilter) return false
-      if (typeFilter && t.testType !== typeFilter) return false
-      return matchText(`${t.title} ${t.code} ${t.description} ${t.collectionGroup}`, keyword)
-    })
-
-    return [...matched].sort((a, b) => {
-      if (sortOrder === 'Nhiều lượt thi nhất') {
-        return b.attemptsCount - a.attemptsCount
-      }
-      const diff = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      return sortOrder === 'Cũ nhất' ? -diff : diff
-    })
-  }, [tests, difficultyFilter, typeFilter, keyword, sortOrder])
-
-  const paged = useMemo(() => paginate(filteredTests, page, PAGE_SIZE), [filteredTests, page])
+  const scrollToConsultation = () => {
+    document
+      .getElementById(CONSULTATION_SECTION_ID)
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 
   return (
-    <div className="ec-reading-font min-h-screen bg-[#F5FAFE] pb-16">
-      {/* Breadcrumb */}
-      <div className="border-b border-[#DCEAF3] bg-white py-2 text-xs text-[#718096]">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 lg:px-6">
-          <div className="flex items-center gap-1.5">
-            <Link to="/" className="hover:text-[#2878B8] hover:underline">
-              Trang chủ
-            </Link>
-            <span>»</span>
-            <span className="font-bold text-[#243B53]">Test Online</span>
-          </div>
-
-          <Link
-            to="/test-history"
-            className="inline-flex items-center gap-1.5 font-extrabold text-[#2878B8] hover:underline"
-          >
-            <History className="h-3.5 w-3.5" />
-            <span>Lịch sử làm bài của tôi</span>
-          </Link>
-        </div>
-      </div>
-
-      {/* Banner đầu trang */}
+    <div className="ec-reading-font min-h-screen bg-white pb-16">
       <PageBanner
         title="TEST ONLINE – LUYỆN THI TOEIC TRỰC TUYẾN"
-        badge="HMC TOEIC Testing Platform"
-        subtitle="Luyện tập thường xuyên, đánh giá trình độ và chinh phục mục tiêu TOEIC."
+        badge={`${centerInfo.name} Testing Platform`}
+        subtitle="Hệ thống thi thử TOEIC trực tuyến bám sát 90% cấu trúc đề thi thật – Chấm điểm & giải thích chi tiết ngay sau khi nộp."
         image="https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=1400"
       />
 
-      <div className="mx-auto max-w-7xl px-4 pt-8 lg:px-6">
-        {/* Thanh chuyển nhanh & Lịch sử bài thi */}
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#DCEAF3] bg-white p-4 shadow-xs">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#F26522] px-4 py-2 text-xs font-extrabold uppercase tracking-wide text-white shadow-xs">
-              <Sparkles className="h-3.5 w-3.5" />
-              Listening & Reading (7 Parts)
-            </span>
-            <span className="rounded-lg bg-[#EAF6FD] px-3.5 py-2 text-xs font-bold text-[#2878B8]">
-              Hỗ trợ: Thi toàn bộ đề (Full Test) & Tự chọn Part (Part 1 – Part 7)
-            </span>
-          </div>
+      <div className="mx-auto max-w-7xl px-4 pt-6 lg:px-6">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-2 text-center">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[#243B53] sm:text-sm">
+            ENGLISH CENTER – HỆ THỐNG LUYỆN ĐỀ TOEIC TRỰC TUYẾN CHUẨN CẤU TRÚC ĐỀ THI THẬT
+          </p>
 
-          <div className="flex items-center gap-2.5">
-            <Link
-              to="/test-history"
-              className="inline-flex items-center gap-1.5 rounded-xl border border-[#75BDEB] bg-[#F5FAFE] px-4 py-2 text-xs font-extrabold text-[#2878B8] transition hover:bg-[#75BDEB] hover:text-white"
-            >
-              <History className="h-4 w-4" />
-              <span>Xem lịch sử & Kết quả các lần thi</span>
-            </Link>
-
-            <div className="inline-flex rounded-xl border border-[#DCEAF3] bg-[#F5FAFE] p-1">
-              <button
-                type="button"
-                onClick={() => setViewMode('cards')}
-                className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-extrabold transition ${
-                  viewMode === 'cards'
-                    ? 'bg-[#2878B8] text-white'
-                    : 'text-[#718096] hover:text-[#243B53]'
-                }`}
-              >
-                <LayoutGrid className="h-3.5 w-3.5" />
-                <span>Thẻ đề thi</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode('timeline')}
-                className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-extrabold transition ${
-                  viewMode === 'timeline'
-                    ? 'bg-[#2878B8] text-white'
-                    : 'text-[#718096] hover:text-[#243B53]'
-                }`}
-              >
-                <ListOrdered className="h-3.5 w-3.5" />
-                <span>Theo bộ đề</span>
-              </button>
-            </div>
-          </div>
+          <Link
+            to="/test-history"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[#75BDEB] bg-[#F5FAFE] px-3.5 py-1.5 text-xs font-bold text-[#2878B8] transition hover:bg-[#75BDEB] hover:text-white"
+          >
+            <History className="h-3.5 w-3.5" />
+            <span>Lịch sử làm bài</span>
+          </Link>
         </div>
 
-        {/* Bộ lọc tìm kiếm, độ khó, loại đề, sắp xếp */}
-        <FilterBar
-          keyword={keyword}
-          onKeywordChange={(v) => {
-            setKeyword(v)
-            setPage(1)
-          }}
-          placeholder="Tìm theo tên đề thi, mã đề (VD: TEST 1 – 2026, ETS-2026-T01)..."
-          selects={[
-            {
-              id: 'test-difficulty',
-              value: difficultyFilter,
-              placeholder: 'Tất cả độ khó',
-              options: difficulties,
-              onChange: (v) => {
-                setDifficultyFilter(v)
-                setPage(1)
-              },
-            },
-            {
-              id: 'test-type',
-              value: typeFilter,
-              placeholder: 'Tất cả loại đề',
-              options: testTypes,
-              onChange: (v) => {
-                setTypeFilter(v)
-                setPage(1)
-              },
-            },
-            {
-              id: 'test-sort',
-              value: sortOrder,
-              placeholder: 'Sắp xếp: Mới nhất',
-              options: ['Mới nhất', 'Cũ nhất', 'Nhiều lượt thi nhất'],
-              onChange: (v) => {
-                setSortOrder(v || 'Mới nhất')
-                setPage(1)
-              },
-            },
-          ]}
-        />
+        {/* Bố cục 2 cột giống hệt ảnh mẫu 3: Cột trái (Tab + Timeline bộ đề) | Cột phải (3 thẻ khóa học/tư vấn màu xanh dương nhạt) */}
+        <div className="grid grid-cols-1 items-start gap-7 lg:grid-cols-[minmax(0,1fr)_300px]">
+          {/* CỘT TRÁI */}
+          <div>
+            {/* Thanh 2 Tab lớn: Listening & Reading (cam khi chọn) | Speaking & Writing (xanh dương nhạt) */}
+            <div
+              role="tablist"
+              aria-label="Chọn kỹ năng thi TOEIC"
+              className="mb-6 grid grid-cols-2 overflow-hidden border border-[#DCEAF3]"
+            >
+              <button
+                type="button"
+                role="tab"
+                aria-selected={skillTab === 'listening_reading'}
+                onClick={() => setSkillTab('listening_reading')}
+                className={`py-3.5 text-center text-sm font-bold tracking-wide transition sm:py-4 sm:text-lg ${
+                  skillTab === 'listening_reading'
+                    ? 'bg-[#F26522] text-white'
+                    : 'bg-[#75BDEB] text-white hover:bg-[#5aaee3]'
+                }`}
+              >
+                Listening &amp; Reading
+              </button>
 
-        {/* Danh sách đề thi */}
-        <div className="mt-7">
-          {loading && <LoadingBlock label="Đang tải danh sách đề thi trực tuyến..." />}
+              <button
+                type="button"
+                role="tab"
+                aria-selected={skillTab === 'speaking_writing'}
+                onClick={() => setSkillTab('speaking_writing')}
+                className={`border-l border-white/60 py-3.5 text-center text-sm font-bold tracking-wide transition sm:py-4 sm:text-lg ${
+                  skillTab === 'speaking_writing'
+                    ? 'bg-[#F26522] text-white'
+                    : 'bg-[#75BDEB] text-white hover:bg-[#5aaee3]'
+                }`}
+              >
+                Speaking &amp; Writing
+              </button>
+            </div>
 
-          {!loading && error && <ErrorBlock message={error} onRetry={retry} />}
+            {loading && <LoadingBlock label="Đang tải danh sách đề thi trực tuyến..." />}
 
-          {!loading && !error && filteredTests.length === 0 && (
-            <EmptyBlock
-              title="Không tìm thấy đề thi phù hợp"
-              description="Hãy thử thay đổi từ khóa tìm kiếm hoặc đặt lại bộ lọc độ khó / loại đề."
-            />
-          )}
+            {!loading && error && <ErrorBlock message={error} onRetry={retry} />}
 
-          {!loading && !error && filteredTests.length > 0 && (
-            <>
-              {viewMode === 'cards' ? (
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  {paged.items.map((test) => (
-                    <TestCard key={test.id} test={test} />
-                  ))}
+            {!loading && !error && filteredTests.length === 0 && (
+              <EmptyBlock
+                title={
+                  skillTab === 'speaking_writing'
+                    ? 'Bộ đề TOEIC Speaking & Writing đang được cập nhật'
+                    : 'Chưa có đề thi phù hợp'
+                }
+                description={
+                  skillTab === 'speaking_writing'
+                    ? 'Hệ thống đề thi Speaking & Writing đang được đội ngũ chuyên môn cập nhật. Bạn hãy chọn tab Listening & Reading để làm bài thi ngay nhé!'
+                    : 'Vui lòng thử lại sau.'
+                }
+              />
+            )}
+
+            {!loading && !error && filteredTests.length > 0 && (
+              <TestCollectionTimeline
+                tests={filteredTests}
+                headingTitle={
+                  skillTab === 'listening_reading'
+                    ? 'TOEIC LISTENING & READING - FULL TEST'
+                    : 'TOEIC SPEAKING & WRITING - FULL TEST'
+                }
+              />
+            )}
+          </div>
+
+          {/* CỘT PHẢI: 3 Banner English Center dùng đúng tông xanh dương nhạt chủ đạo (#75BDEB) + điểm nhấn cam (#F26522) */}
+          <aside className="flex flex-col gap-5">
+            <Link
+              to="/courses"
+              className="group block overflow-hidden rounded-xl border border-[#DCEAF3] bg-white shadow-xs transition hover:-translate-y-0.5 hover:shadow-md"
+            >
+              <div className="flex items-center justify-center gap-1.5 bg-white px-3 py-2 text-xs font-extrabold uppercase italic text-[#243B53]">
+                <span>CLICK THAM GIA NGAY</span>
+                <MousePointerClick className="h-4 w-4 text-[#F26522]" />
+              </div>
+              <div className="relative overflow-hidden bg-gradient-to-br from-[#75BDEB] to-[#2878B8] p-5 text-white">
+                <span className="text-xs font-bold uppercase tracking-wider text-white/95">
+                  CỘNG ĐỒNG HỌC
+                </span>
+                <h3 className="mt-1 text-xl font-black uppercase leading-tight text-[#FFE4D6]">
+                  TOEIC ONLINE
+                </h3>
+                <p className="mt-0.5 text-lg font-extrabold uppercase text-white">
+                  CHỈ CẦN CỐ GẮNG - HỌC LÀ ĐỖ
+                </p>
+                <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-[11px] font-bold">
+                  <GraduationCap className="h-3.5 w-3.5" />
+                  <span>Cùng {centerInfo.name}</span>
                 </div>
-              ) : (
-                <TestCollectionTimeline tests={filteredTests} />
-              )}
+              </div>
+            </Link>
 
-              {viewMode === 'cards' && (
-                <div className="mt-8">
-                  <Pagination
-                    page={paged.page}
-                    totalPages={paged.totalPages}
-                    onChange={setPage}
-                  />
+            <Link
+              to="/study-zone/grammar"
+              className="group block overflow-hidden rounded-xl border border-[#DCEAF3] bg-white shadow-xs transition hover:-translate-y-0.5 hover:shadow-md"
+            >
+              <div className="flex items-center justify-center gap-1.5 bg-white px-3 py-2 text-xs font-extrabold uppercase italic text-[#243B53]">
+                <span>CLICK HỌC THỬ NGAY</span>
+                <MousePointerClick className="h-4 w-4 text-[#F26522]" />
+              </div>
+              <div className="relative overflow-hidden bg-gradient-to-br from-[#75BDEB] to-[#2878B8] p-5 text-white">
+                <span className="text-xs font-bold uppercase tracking-wider text-white/95">
+                  KHO LUYỆN TẬP STUDY ZONE
+                </span>
+                <h3 className="mt-1 text-2xl font-black uppercase leading-tight text-[#FFE4D6]">
+                  NGỮ PHÁP &amp; TỪ VỰNG
+                </h3>
+                <p className="mt-1 text-xs font-bold uppercase tracking-wide text-white">
+                  TĂNG ĐIỂM NHANH TỪNG PART
+                </p>
+                <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-[11px] font-bold">
+                  <BookOpen className="h-3.5 w-3.5" />
+                  <span>Hoàn toàn miễn phí</span>
                 </div>
-              )}
-            </>
-          )}
+              </div>
+            </Link>
+
+            <button
+              type="button"
+              onClick={scrollToConsultation}
+              className="group block w-full overflow-hidden rounded-xl border border-[#DCEAF3] bg-white text-left shadow-xs transition hover:-translate-y-0.5 hover:shadow-md"
+            >
+              <div className="flex items-center justify-center gap-1.5 bg-white px-3 py-2 text-xs font-extrabold uppercase italic text-[#243B53]">
+                <span>NHẬN TƯ VẤN LỘ TRÌNH</span>
+                <MousePointerClick className="h-4 w-4 text-[#F26522]" />
+              </div>
+              <div className="relative overflow-hidden bg-gradient-to-br from-[#75BDEB] to-[#2878B8] p-5 text-white">
+                <span className="text-xs font-bold uppercase tracking-wider text-white/95">
+                  LỘ TRÌNH CÁ NHÂN HÓA
+                </span>
+                <h3 className="mt-1 text-2xl font-black uppercase leading-tight text-[#FFE4D6]">
+                  1 KÈM 1 &amp; LỚP NHÓM
+                </h3>
+                <p className="mt-1 text-xs font-bold uppercase tracking-wide text-white">
+                  DÀNH CHO NGƯỜI MẤT GỐC &amp; BẬN RỘN
+                </p>
+                <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[#F26522] px-3 py-1 text-[11px] font-bold text-white">
+                  <Headphones className="h-3.5 w-3.5" />
+                  <span>Đăng ký tư vấn ngay</span>
+                </div>
+              </div>
+            </button>
+          </aside>
         </div>
       </div>
     </div>

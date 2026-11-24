@@ -1,209 +1,115 @@
-import {
-  AlertCircle,
-  BookOpen,
-  CheckCircle2,
-  Clock,
-  FileText,
-  Headphones,
-  Play,
-  Sparkles,
-} from 'lucide-react'
 import ImageViewer from '@/features/study-zone/components/ImageViewer'
 import type { TestPart } from '@/features/test-online/types/test.types'
 
 interface PartIntroductionProps {
   part: TestPart
-  currentPartOrderIndex: number // 1..N trong số các Part học viên đã chọn
+  currentPartOrderIndex: number
   totalSelectedParts: number
   formattedRemainingTime: string
   listeningJustCompletedNotice?: boolean
+  answeredCount?: number
+  totalQuestions?: number
+  onOpenNav?: () => void
   onStartPart: () => void
 }
 
 /**
- * Màn hình giới thiệu riêng trước mỗi Part (Part 1 -> Part 7).
- * - Hiển thị trước khi làm câu hỏi đầu tiên của Part đó.
- * - Tuyệt đối không tự động phát audio trong màn hình giới thiệu.
- * - Đồng hồ tổng thời gian của bài thi vẫn chạy liên tục.
+ * Màn hình giới thiệu Part cho tất cả các Part (Part 1 – Part 7):
+ * - Phía trên bên trái là tiêu đề PART, bên phải là huy hiệu tiến độ màu cam.
+ * - Khung đọc hướng dẫn đặt cân đối và nút "BẮT ĐẦU" căn chính giữa ngay bên dưới.
  */
 export default function PartIntroduction({
   part,
-  currentPartOrderIndex,
-  totalSelectedParts,
-  formattedRemainingTime,
   listeningJustCompletedNotice = false,
+  answeredCount = 0,
+  totalQuestions = 200,
+  onOpenNav,
   onStartPart,
 }: PartIntroductionProps) {
   const isListening = part.section === 'listening'
+  const sampleImageBlock = part.introductionBlocks?.find((b) => b.type === 'image')
 
   return (
-    <div className="ec-reading-font mx-auto max-w-4xl">
-      {/* Thông báo khi vừa hoàn thành toàn bộ phần Listening và tự động chuyển sang giới thiệu Reading */}
+    <div className="ec-reading-font rounded-lg border border-[#DCEAF3] bg-white p-5 shadow-2xs sm:p-7">
+      {/* Hàng đầu khung: PART N bên trái | Ô cam tiến độ bên phải */}
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <h2 className="text-xl font-extrabold uppercase tracking-tight text-[#2878B8] sm:text-2xl">
+          {part.title}
+        </h2>
+
+        <button
+          type="button"
+          onClick={onOpenNav}
+          className="min-w-[96px] rounded-md bg-[#F26522] px-5 py-2.5 text-center text-sm font-bold tabular-nums text-white shadow-2xs transition hover:bg-[#d95314]"
+        >
+          {answeredCount}/{totalQuestions}
+        </button>
+      </div>
+
       {listeningJustCompletedNotice && (
-        <div className="mb-5 flex items-center gap-3 rounded-2xl border-2 border-[#75BDEB] bg-[#EAF6FD] p-4 text-sm font-bold text-[#243B53] shadow-xs">
-          <Sparkles className="h-5 w-5 shrink-0 text-[#2878B8]" />
-          <span>
-            Bạn đã hoàn thành phần Listening. Bây giờ hãy tiếp tục phần Reading.
-          </span>
+        <div className="mx-auto mb-5 max-w-3xl rounded-lg border border-[#75BDEB] bg-[#EAF6FD] px-4 py-3 text-center text-sm font-semibold text-[#243B53]">
+          Bạn đã hoàn thành phần Nghe (Listening). Hãy xem hướng dẫn bên dưới và bắt đầu phần Đọc (Reading).
         </div>
       )}
 
-      <div className="overflow-hidden rounded-2xl border border-[#DCEAF3] bg-white shadow-sm">
-        {/* Header giới thiệu Part */}
-        <div className="border-b border-[#DCEAF3] bg-gradient-to-r from-[#EAF6FD] via-[#F5FAFE] to-white px-6 py-6 sm:px-8">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#2878B8] px-3.5 py-1 text-xs font-extrabold uppercase tracking-wider text-white">
-                {isListening ? (
-                  <Headphones className="h-3.5 w-3.5" />
-                ) : (
-                  <BookOpen className="h-3.5 w-3.5" />
-                )}
-                <span>{isListening ? 'Phần thi Listening' : 'Phần thi Reading'}</span>
-              </span>
+      <div className="mx-auto max-w-3xl">
+        <div className="max-h-[62vh] overflow-y-auto rounded-sm border border-[#CBD5E0] bg-white p-5 text-[14.5px] leading-[1.72] text-[#243B53] [scrollbar-color:#75BDEB_#EDF2F7] [scrollbar-width:thin] sm:p-6">
+          <p className="mb-5 text-center text-base font-medium uppercase tracking-wide text-[#4A5568]">
+            {isListening ? 'HƯỚNG DẪN PHẦN NGHE (LISTENING)' : 'HƯỚNG DẪN PHẦN ĐỌC (READING)'}
+          </p>
 
-              <span className="rounded-full border border-[#75BDEB] bg-white px-3 py-1 text-xs font-extrabold text-[#2878B8]">
-                Part {currentPartOrderIndex} / {totalSelectedParts} Part đã chọn
-              </span>
+          <p className="mb-4 text-[#243B53]">{part.description}</p>
+
+          <p className="font-bold uppercase text-[#243B53]">
+            {part.title} – {part.vietnameseTitle}:
+          </p>
+
+          <ul className="mt-2 list-disc space-y-2 pl-5 text-[#243B53]">
+            {part.instructions.map((inst, idx) => (
+              <li key={idx}>{inst}</li>
+            ))}
+          </ul>
+
+          {part.importantNotes.length > 0 && (
+            <div className="mt-4 rounded-md bg-[#F5FAFE] p-3.5 text-xs text-[#4A5568]">
+              {part.importantNotes.map((note, idx) => (
+                <p key={idx} className="mt-1 first:mt-0">
+                  • {note}
+                </p>
+              ))}
             </div>
+          )}
 
-            <div className="inline-flex items-center gap-1.5 rounded-xl border border-[#75BDEB] bg-white px-3 py-1.5 text-xs font-bold text-[#243B53]">
-              <Clock className="h-3.5 w-3.5 text-[#2878B8]" />
-              <span>Thời gian làm bài:</span>
-              <strong className="font-mono text-sm text-[#2878B8]">{formattedRemainingTime}</strong>
-              <span className="rounded bg-[#EAF6FD] px-1.5 py-0.5 text-[10px] font-extrabold text-[#2878B8]">
-                Chưa tính giờ
-              </span>
+          {sampleImageBlock && sampleImageBlock.type === 'image' ? (
+            <div className="mt-5">
+              <ImageViewer
+                src={sampleImageBlock.url}
+                alt={sampleImageBlock.alt ?? part.title}
+                caption={sampleImageBlock.caption}
+              />
             </div>
-          </div>
-
-          <h2 className="mt-4 text-2xl font-black uppercase tracking-tight text-[#243B53] sm:text-3xl">
-            {part.title} – {part.englishTitle}
-          </h2>
-          <p className="mt-1 text-sm font-bold text-[#2878B8]">{part.vietnameseTitle}</p>
+          ) : (
+            part.partNumber === 1 && (
+              <div className="mt-5 overflow-hidden rounded border border-[#E2E8F0]">
+                <img
+                  src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=900"
+                  alt="Hình minh họa phần mô tả tranh"
+                  className="aspect-[16/10] w-full object-cover grayscale"
+                />
+              </div>
+            )
+          )}
         </div>
 
-        {/* Nội dung hướng dẫn chi tiết lấy từ cấu hình của Part */}
-        <div className="p-6 sm:p-8">
-          {/* Thông số nhanh của Part */}
-          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
-            <div className="flex items-center gap-3 rounded-xl border border-[#DCEAF3] bg-[#F5FAFE] p-3.5">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#EAF6FD] text-[#2878B8]">
-                <FileText className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-xs text-[#718096]">Số lượng câu hỏi trong Part</p>
-                <p className="text-base font-extrabold text-[#243B53]">
-                  {part.questionCount} câu hỏi
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 rounded-xl border border-[#DCEAF3] bg-[#F5FAFE] p-3.5">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#EAF6FD] text-[#2878B8]">
-                {isListening ? (
-                  <Headphones className="h-5 w-5" />
-                ) : (
-                  <BookOpen className="h-5 w-5" />
-                )}
-              </div>
-              <div>
-                <p className="text-xs text-[#718096]">Dạng nội dung xuất hiện</p>
-                <p className="text-sm font-extrabold text-[#243B53]">{part.contentTypesLabel}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Mô tả Part */}
-          <div className="mt-6">
-            <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#2878B8]">
-              Giới thiệu nội dung
-            </h3>
-            <p className="mt-2 rounded-xl border border-[#DCEAF3] bg-[#F5FAFE] p-4 text-sm leading-relaxed text-[#243B53] sm:text-base">
-              {part.description}
-            </p>
-          </div>
-
-          {/* Hình ảnh / Nội dung minh họa trong màn hình giới thiệu (nếu có) */}
-          {part.introductionBlocks && part.introductionBlocks.length > 0 && (
-            <div className="mt-5 flex flex-col gap-3">
-              {part.introductionBlocks.map((block) => {
-                if (block.type === 'image') {
-                  return (
-                    <ImageViewer
-                      key={block.id}
-                      src={block.url}
-                      alt={block.alt ?? part.title}
-                      caption={block.caption}
-                      compact
-                    />
-                  )
-                }
-                if (block.type === 'text') {
-                  return (
-                    <p
-                      key={block.id}
-                      className="rounded-xl border border-[#DCEAF3] bg-white p-3.5 text-sm text-[#243B53]"
-                    >
-                      {block.content}
-                    </p>
-                  )
-                }
-                return null
-              })}
-            </div>
-          )}
-
-          {/* Hướng dẫn làm bài */}
-          <div className="mt-6">
-            <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#2878B8]">
-              Hướng dẫn làm bài ({part.title})
-            </h3>
-            <ul className="mt-2.5 flex flex-col gap-2.5">
-              {part.instructions.map((inst, index) => (
-                <li
-                  key={index}
-                  className="flex items-start gap-2.5 rounded-xl border border-[#DCEAF3] bg-white px-4 py-3 text-sm text-[#243B53]"
-                >
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#2878B8]" />
-                  <span>{inst}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Lưu ý quan trọng */}
-          {part.importantNotes.length > 0 && (
-            <div className="mt-6 rounded-xl border border-[#75BDEB] bg-[#EAF6FD]/70 p-4">
-              <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-[#2878B8]">
-                <AlertCircle className="h-4 w-4" />
-                <span>Lưu ý quan trọng</span>
-              </div>
-              <ul className="mt-2 flex flex-col gap-1.5 text-xs font-medium text-[#243B53] sm:text-sm">
-                {part.importantNotes.map((note, idx) => (
-                  <li key={idx}>• {note}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Nút Bắt đầu Part */}
-          <div className="mt-7 flex flex-col items-center justify-between gap-4 border-t border-[#EAF6FD] pt-5 sm:flex-row">
-            <p className="text-xs text-[#718096]">
-              {isListening
-                ? 'Thời gian đọc giới thiệu không tính giờ. Khi nhấn Bắt đầu Part, đồng hồ sẽ tính giờ và phát Audio 1 lần.'
-                : 'Thời gian đọc giới thiệu không tính giờ. Khi nhấn Bắt đầu Part, đồng hồ sẽ tiếp tục tính giờ làm bài.'}
-            </p>
-
-            <button
-              type="button"
-              onClick={onStartPart}
-              className="inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-xl bg-[#F26522] px-7 py-3.5 text-sm font-black uppercase tracking-wide text-white shadow-md transition hover:-translate-y-0.5 hover:bg-[#d95314] sm:w-auto"
-            >
-              <Play className="h-4 w-4 fill-current" />
-              <span>BẮT ĐẦU {part.title}</span>
-            </button>
-          </div>
+        {/* Nút BẮT ĐẦU đặt căn giữa ngay bên dưới khung đọc hướng dẫn cho tất cả các Part */}
+        <div className="mt-5 flex justify-center">
+          <button
+            type="button"
+            onClick={onStartPart}
+            className="rounded-lg bg-[#75BDEB] px-10 py-2.5 text-sm font-extrabold uppercase tracking-wide text-white shadow-xs transition hover:bg-[#5aaee3]"
+          >
+            BẮT ĐẦU
+          </button>
         </div>
       </div>
     </div>

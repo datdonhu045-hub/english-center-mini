@@ -1,108 +1,88 @@
-# MÔ HÌNH DỮ LIỆU & QUAN HỆ NGHIỆP VỤ FRONTEND (`FRONTEND_DATA_MODEL.md`)
+# MÔ HÌNH DỮ LIỆU FRONTEND & CHUẨN HÓA THỰC THỂ (FRONTEND DATA MODEL)
 
-Tài liệu này định nghĩa sơ đồ quan hệ thực thể (Domain Entities) đang sử dụng thống nhất trên toàn bộ Frontend HMC TOEIC để đội ngũ Backend Node.js đối chiếu khi thiết kế Database Schema.
+Tài liệu này mô tả hệ thống thực thể dữ liệu (Domain Model) đã được chuẩn hóa trên Frontend **English Center**, đảm bảo tính nhất quán, tách biệt rõ trách nhiệm nghiệp vụ và ánh xạ 1–1 sang lược đồ cơ sở dữ liệu (PostgreSQL / MongoDB) khi xây dựng Backend Node.js.
 
 ---
 
-## 1. Sơ đồ Quan hệ Thực thể Tổng thể
+## 1. SƠ ĐỒ QUAN HỆ THỰC THỂ CỐT LÕI (ERD)
 
-```text
-AuthUser (1) ────── (1) StudentProfile
-                         │
-                         ├──── (0..N) Enrollment ────> (1) StudentClassInfo ────> (1) Course
-                         │                                      │
-                         │                                      ├──── (1..N) LessonSession (24 buổi)
-                         │                                      │               ├── (0..N) LearningResource
-                         │                                      │               └── (0..1) AssignmentItem
-                         │                                      │
-                         ├──── (0..N) AssignmentSubmission ─────┴──────────────────────────┘
-                         ├──── (0..N) AttendanceRecord (gắn với LessonSession)
-                         ├──── (0..N) OfficialExamRecord (Middle Test & Final Test)
-                         ├──── (0..N) SupportRequestRecord (Học lại / Bảo lưu / Chuyển lớp)
-                         └──── (0..N) TestAttempt ────> (0..1) TestAttemptResult (Test Online)
+```mermaid
+erDiagram
+    BRANCH ||--o{ CLASS : "tổ chức tại"
+    BRANCH ||--o{ JOB_POST : "tuyển dụng tại"
+    COURSE ||--o{ CLASS : "mở các lớp theo đợt"
+    USER ||--o{ ENROLLMENT : "ghi danh"
+    CLASS ||--o{ ENROLLMENT : "có học viên"
+    ENROLLMENT ||--o{ TUITION_LEDGER : "phát sinh công nợ"
+    CLASS ||--|| LEARNING_PLAN : "áp dụng kế hoạch"
+    LEARNING_PLAN ||--o{ LESSON_SESSION : "gồm 24 buổi"
+    LESSON_SESSION ||--o{ LEARNING_RESOURCE : "đính kèm tài liệu"
+    LESSON_SESSION ||--o| ASSIGNMENT : "giao BTVN / Demo"
+    ASSIGNMENT ||--o{ ASSIGNMENT_SUBMISSION : "học viên nộp"
+    LESSON_SESSION ||--o{ ATTENDANCE_RECORD : "điểm danh"
+    ENROLLMENT ||--o{ OFFICIAL_EXAM_RESULT : "điểm Mid / Final"
+
+    TOEIC_TEST ||--o{ TOEIC_TEST_VERSION : "lưu phiên bản"
+    TOEIC_TEST_VERSION ||--o{ TOEIC_PART : "gồm 7 Part"
+    TOEIC_PART ||--o{ QUESTION_GROUP : "nhóm đoạn văn / hội thoại"
+    TOEIC_PART ||--o{ TOEIC_QUESTION : "chứa câu hỏi"
+    USER ||--o{ TEST_ATTEMPT : "thực hiện lượt thi"
+    TOEIC_TEST_VERSION ||--o{ TEST_ATTEMPT : "chấm theo phiên bản"
 ```
 
 ---
 
-## 2. Chi Tiết Các Thực Thể Nghiệp Vụ (Domain Models)
+## 2. ĐẶC TẢ CHI TIẾT CÁC NHÓM THỰC THỂ
 
-### 2.1. Tài khoản & Hồ sơ Học viên (`AuthUser` & `StudentProfile`)
-- **`AuthUser`** (`src/features/auth/types/auth.types.ts`):
-  - `id: string` (VD: `'stu-001'`, `'stu-002'`)
-  - `username: string`
-  - `fullName: string`
-  - `email: string`
-  - `phone: string`
-  - `role: 'student' | 'staff' | 'admin'` (Tự đăng ký luôn cố định là `'student'`)
-  - `createdAt: string` (ISO 8601)
-- **`StudentProfile`** (`src/features/student-portal/model/studentPortal.types.ts`):
-  - `id: string` (Khớp 1-1 với `AuthUser.id`)
-  - `studentCode: string` (VD: `'HV-2026-001'`)
-  - `entryScore: { lc: number; rc: number; total: number }`
-  - `goalScore: { lc: number; rc: number; total: number }`
+### 2.1. Phân biệt `Course` – `Class` – `Enrollment` – `Tuition`
+1. **`Course` (`src/features/courses/types.ts`):** Chương trình đào tạo chuẩn của trung tâm.
+   - `id`: `'foundation-toeic' | 'camp-bomb-toeic' | 'submarine-toeic' | 'master-speaking-writing'`
+   - `slug`, `name`, `targetScore`, `durationWeeks`, `totalSessions`, `tuition` (số nguyên VND), `status`: `'draft' | 'published' | 'archived'`.
+2. **`Class` (`StudentClassInfo` / `PublicScheduleItem`):** Lớp học thực tế mở theo từng đợt khai giảng.
+   - `id` (`cls-ec-s01`), `classCode` (`EC-S01`), `courseId` (FK -> `Course.id`), `branchId` (FK -> `Branch.id`).
+   - `teacherId` / `teacherName`, `roomName`, `scheduleDays`, `scheduleTime`, `startDate`, `endDate`.
+   - `status`: `'open' | 'closing-soon' | 'full' | 'ongoing' | 'completed' | 'cancelled'`.
+3. **`Enrollment`:** Bản ghi liên kết 1 Học viên (`userId`) vào 1 Lớp (`classId`).
+   - `id`, `studentId`, `classId`, `enrolledAt` (ISO-8601), `enrollmentStatus`: `'active' | 'reserved' | 'transferred' | 'completed' | 'dropped'`.
+   - `agreedTuitionVnd`: Học phí chốt tại thời điểm đăng ký (Snapshot bất biến kể cả khi `Course.tuition` tăng/giảm về sau).
+   - `entryScore`: `{ lc: number, rc: number, total: number }`, `goalScore`: `{ lc: number, rc: number, total: number }`.
 
-### 2.2. Khóa học, Lớp học & Buổi học (`Course`, `StudentClassInfo`, `LessonSession`)
-- **`Course`** (`src/features/courses/types.ts`):
-  - `id: string` (VD: `'foundation-toeic'`, `'beginners-toeic'`, `'camp-bomb-toeic'`, `'submarine-toeic'`)
-  - `slug: string`, `code: string`, `name: string`, `targetScore: string`, `status: 'active' | 'paused' | 'draft' | 'archived'`
-- **`StudentClassInfo`** (`src/features/student-portal/model/studentPortal.types.ts`):
-  - `id: string` (VD: `'cls-hmc-s01'`)
-  - `classCode: string` (VD: `'HMC-S01'`)
-  - `courseId: string` (Tham chiếu `Course.id`, VD: `'submarine-toeic'`)
-  - `courseName: string`, `teacherName: string`, `branchName: string`
-  - `scheduleDays: string`, `scheduleTime: string`, `roomName: string`
-  - `startDate: string` (YYYY-MM-DD), `endDate: string` (YYYY-MM-DD)
-  - `totalWeeks: number`, `totalSessions: number`
-- **`LessonSession`**:
-  - `id: string` (`'les-01'` .. `'les-24'`)
-  - `learningPlanId: string`
-  - `sessionNumber: number` (`1..24`), `weekIndex: number` (`0..7`)
-  - `date: string` (YYYY-MM-DD)
-  - `type: 'class' | 'review' | 'demo' | 'mid' | 'final'`
-  - `title: string`, `lcContent: string`, `rcContent: string`
-  - `resources: LearningResource[]`
-  - `assignmentId?: string`
+### 2.2. Phân biệt `Assignment` (Bài tập Giảng viên giao) vs `StudyExercise` (Study Zone)
+- **`Assignment` & `AssignmentSubmission` (`src/features/student-portal/model/studentPortal.types.ts`):**
+  - Thuộc về một buổi học cụ thể (`lessonId`, `sessionNumber`) của lớp mà học viên đang theo học.
+  - Có `assignedDate` (chỉ mở khóa khi tới ngày học), `dueDate` (ISO-8601), `driveLink` bài làm, điểm từng kỹ năng và trạng thái xác nhận của Giảng viên: `'todo' | 'submitted' | 'passed' | 'failed'`.
+- **`StudyExercise` (`src/features/study-zone/types.ts`):**
+  - Thuộc ngân hàng tự luyện công khai theo chuyên đề (`grammar | vocabulary | listening`), cho phép làm lại không giới hạn, nghe lại âm thanh nhiều lần và không ảnh hưởng tới điều kiện chuyên cần/qua môn của lớp học.
 
-### 2.3. Bài tập, Bài nộp & Điểm danh (`AssignmentItem`, `AssignmentSubmission`, `AttendanceRecord`)
-- **`AssignmentItem`**:
-  - `id: string` (`'B01'` cho BTVN hoặc `'D11'` cho Demo Test)
-  - `lessonId: string`, `sessionNumber: number`, `weekIndex: number`
-  - `code: string`, `title: string`, `assignedDate: string`, `dueDate: string` (ISO 8601, hạn 23:00)
-  - `isDemoTest: boolean`
-  - `parts: Array<{ key: 'lc' | 'rc'; label: string; maxQuestions: number }> | null`
-- **`AssignmentSubmission`** (Tách biệt khỏi `AssignmentItem`):
-  - `assignmentId: string`, `studentId: string`
-  - `status: 'todo' | 'submitted' | 'passed' | 'failed'`
-  - `driveLink?: string` (Chỉ nhận `https://drive.google.com/...` hoặc `https://docs.google.com/...`)
-  - `partScores?: { lc: number; rc: number }`
-  - `demoScores?: { lc: number; rc: number; total: number }`
-  - `isConfirmedByTeacher?: boolean` (Phân biệt rõ điểm học viên tự nhập đang chờ kiểm tra với điểm giáo viên đã xác nhận)
-  - `teacherComment?: string`, `submittedAt?: string`
-- **`AttendanceRecord`**:
-  - `id: string`, `lessonId: string`, `sessionNumber: number`, `date: string`
-  - `status: 'on' | 'late' | 'excused' | 'absent' | 'none'` (Do giáo viên ghi nhận, học viên chỉ đọc)
+### 2.3. Mô hình Đề thi TOEIC, Khung Câu hỏi Chuẩn hóa & Lượt làm bài (`src/features/test-online/types/test.types.ts`)
+1. **`Test` & Phiên bản đề (`TestVersion`):**
+   - `id` (`test-2026-01`..`test-2025-02`), `code` (`ETS-2026-T01`, `EC-2025-T01`...), `slug`, `skillCategory`: `'listening_reading' | 'speaking' | 'writing' | 'speaking_writing'`.
+   - `status`: `'draft' | 'published' | 'archived'`.
+   - `allowPartSelection: boolean`, `availableDurationOptions: number[]`, `scoreConversionTable: ScoreConversionRow[]`.
+2. **Mô hình Câu hỏi Chuẩn hóa (`TestQuestion` & `normalizeQuestionMedia` tại `src/features/test-online/utils/questionMedia.ts`):**
+   - Để đơn giản hóa việc nhập liệu và hiển thị ổn định trên khung 2 cột cho mọi Part 1–7, mỗi câu hỏi đều hỗ trợ đồng nhất bộ 3 trường nội dung:
+     - `questionText?: string` (Văn bản câu hỏi — có thể để trống ở Part 1 & Part 2)
+     - `audioUrl?: string` (File âm thanh câu hỏi hoặc kế thừa từ cụm hội thoại `group.audioUrl`)
+     - `imageUrl?: string` (Hình ảnh minh họa câu hỏi hoặc bảng biểu `group.imageUrl`)
+   - Đi kèm `options: TestAnswerOption[]` (4 phương án A, B, C, D cho Part 1, 3, 4, 5, 6, 7; 3 phương án A, B, C chuẩn ETS hoặc 4 phương án tùy cấu hình cho Part 2).
+   - Câu hỏi đơn hay câu hỏi theo cụm (`QuestionGroup` cho Part 3, 4, 6, 7) nếu khuyết trường nào trong 3 trường trên thì giao diện tự động ẩn gọn phần tử rỗng đó mà vẫn giữ nguyên khung 2 cột chuẩn.
+3. **Tách biệt Đề thi Client và Đáp án Server (`ServerTestAnswerKey`):**
+   - `TestQuestion` gửi xuống phòng thi đang làm bài **không chứa** `correctOptionId` hay `explanation`.
+   - `ServerTestAnswerKey` (`{ questionId, correctOptionId, explanation }`) chỉ được dùng trong bước chấm bài (`scoringService.ts`) và trả về bên trong `TestAttemptResult` sau khi `status === 'submitted'`.
+4. **`TestAttempt` & `TestAttemptResult` (Bảo toàn kết quả lịch sử):**
+   - `TestAttempt`: `id`, `userId` (`ownerId`), `testId`, `testTitle`, `mode` (`'full' | 'practice'`), `selectedParts`, `durationSeconds`, `startedAt`, `expiresAt`, `submittedAt`, `status` (`'in_progress' | 'submitted'`), `answers`, `flaggedQuestionIds`, `audioPlayedKeys`.
+   - `TestAttemptResult`: Lưu bất biến `listeningCorrect`, `readingCorrect`, `listeningScore` (`5–495`), `readingScore` (`5–495`), `totalScore` (`10–990`), `isFullTestScore`, `accuracyPercent`, `partBreakdown` và `questionReviews` (snapshot đầy đủ câu hỏi, ảnh, audio, đáp án người dùng chọn, đáp án đúng và giải thích).
 
-### 2.4. Kết quả Thi Mid/Final & Yêu cầu Hỗ trợ (`OfficialExamRecord`, `SupportRequestRecord`)
-- **`OfficialExamRecord`**:
-  - `id: string`, `examType: 'mid' | 'final'`, `examDate: string`
-  - `lcScore: number`, `rcScore: number`, `totalScore: number`, `isConfirmed: boolean`
-  - `parts: Record<'p1' | 'p2' | 'p3' | 'p4' | 'p5' | 'p6' | 'p7s' | 'p7d' | 'p7t', { correct: number; total: number }>`
-- **`SupportRequestRecord`**:
-  - `id: string`, `studentId: string`
-  - `type: 'retake' | 'hold' | 'resume' | 'transfer'`
-  - `reason: string`, `content: string`, `contact?: string`, `createdAt: string`
-  - `status: 'pending' | 'processing' | 'resolved'`
+---
 
-### 2.5. Đề thi, Lượt thi & Kết quả Test Online (`Test`, `TestAttempt`, `TestAttemptResult`)
-- **`Test`** (`src/features/test-online/types/test.types.ts`):
-  - Chứa thông tin đề thi và 7 `TestPart` -> `QuestionGroup` -> `TestQuestion` (**không chứa đáp án đúng**).
-- **`TestAttempt`**:
-  - `id: string` (`'ATT-YYYYMMDD-XXX'`), `studentId?: string`, `testId: string`, `testSlug: string`
-  - `practiceMode: 'full' | 'custom_parts'`, `selectedParts: ToeicPartNumber[]`, `selectedDuration: number`
-  - `startedAt: string`, `deadlineAt: string`, `timerPausedAt?: string`, `submittedAt?: string`
-  - `status: 'in_progress' | 'submitted' | 'expired'`
-  - `answers: Record<string, string>`, `flaggedQuestionIds: string[]`
-  - `audioStates: Record<string, AudioGroupState>` (Quản lý trạng thái phát 1 lần của từng nhóm Audio Listening)
-  - `introducedParts: ToeicPartNumber[]`, `currentPartNumber: ToeicPartNumber`, `currentStage: 'part_intro' | 'questions'`, `listeningCompleted: boolean`
-- **`TestAttemptResult`**:
-  - Chỉ được tạo sau khi lượt thi chuyển sang `'submitted'` hoặc `'expired'`, chứa thống kê điểm quy đổi, thống kê từng Part và `reviews` (đáp án đúng + giải thích + transcript).
+## 3. QUY TẮC TRẠNG THÁI & CHUẨN DỮ LIỆU TOÀN HỆ THỐNG
+
+| Thuộc tính | Quy chuẩn bắt buộc |
+| --- | --- |
+| **Trạng thái xuất bản nội dung (`PublishStatus`)** | `'draft' \| 'published' \| 'archived'` |
+| **Trạng thái tin tuyển dụng (`JobStatus`)** | `'draft' \| 'published' \| 'closed' \| 'archived'` |
+| **Trạng thái lớp khai giảng (`ScheduleStatus`)** | `'open' \| 'closing-soon' \| 'full' \| 'cancelled'` |
+| **Vai trò người dùng (`UserRole`)** | `'student' \| 'teacher' \| 'academic' \| 'accounting' \| 'sale' \| 'admin'` (Frontend hiện phục vụ `'student'` & khách `'guest'`) |
+| **Định dạng ngày giờ** | Lưu trữ & truyền tải `ISO-8601` (`YYYY-MM-DDTHH:mm:ss.sssZ`); ngày thuần lịch học dùng `YYYY-MM-DD`. |
+| **Định dạng tiền tệ** | Số nguyên dương `VND` (`number` nguyên, hiển thị qua `Intl.NumberFormat('vi-VN')`). |
+| **Bảo mật URL bên ngoài** | Mọi liên kết tài liệu/Google Drive của học viên đều đi qua `toSafeExternalUrl` (`src/utils/safeUrl.ts`) chỉ chấp nhận giao thức `http:` / `https:`. |

@@ -1,64 +1,20 @@
-# NHẬT KÝ SỬA LỖI & CHUẨN HÓA (`BUG_FIX_LOG.md`)
+# NHẬT KÝ SỬA LỖI & CẢI TIẾN HỆ THỐNG (BUG FIX LOG)
 
-Tài liệu này ghi nhận các lỗi thực tế đã được phát hiện, sửa chữa và kiểm chứng qua `npm run lint` (`oxlint`) và `npm run build` (`tsc -b && vite build`).
-
----
-
-## 1. [BUG-01] (P0 – Critical) Chưa xóa Cache TanStack Query khi Học viên Đăng xuất
-- **Hiện tượng:** Khi học viên A đăng xuất và đăng nhập tài khoản học viên B ngay trong cùng phiên trình duyệt, các dữ liệu đã cache trong `queryClient` có nguy cơ còn lưu trong bộ nhớ.
-- **Nguyên nhân:** `authService.logout()` mới chỉ xóa phiên trong `localStorage`/`sessionStorage` (`authSessionStore.setCurrentUser(null)`) mà chưa xóa cache của `queryClient`.
-- **File ảnh hưởng:** [src/features/auth/services/authService.ts](file:///d:/Web/english-center-mini/src/features/auth/services/authService.ts)
-- **Cách khắc phục:** Gọi `queryClient.clear()` ngay trong `authService.logout()`.
-- **Kết quả kiểm thử:** Cache được dọn sạch hoàn toàn ngay khi đăng xuất.
+Tài liệu này ghi nhận trung thực toàn bộ các lỗi giao diện, nghiệp vụ, đồng bộ dữ liệu, bảo mật quyền sở hữu và dọn dẹp mã nguồn đã được phát hiện, khắc phục và kiểm chứng trong dự án **English Center**.
 
 ---
 
-## 2. [BUG-02] (P0 – Critical) Lịch sử làm bài Test Online chưa phân tách theo Tài khoản Học viên (`studentId`)
-- **Hiện tượng:** Trang Lịch sử làm bài (`/test-history` và `/student/history`) hiển thị chung toàn bộ các lượt thi có trong `localStorage` cho mọi tài khoản đăng nhập.
-- **Nguyên nhân:** Thực thể `TestAttempt` chưa có trường `studentId`, `attemptStorageService.createNewAttempt` chưa gắn ID người dùng hiện tại, và `historyApi.getHistory` chưa lọc theo `studentId`.
-- **File ảnh hưởng:**
-  - [src/features/test-online/types/test.types.ts](file:///d:/Web/english-center-mini/src/features/test-online/types/test.types.ts)
-  - [src/features/test-online/services/attemptService.ts](file:///d:/Web/english-center-mini/src/features/test-online/services/attemptService.ts)
-  - [src/features/test-online/api/historyApi.ts](file:///d:/Web/english-center-mini/src/features/test-online/api/historyApi.ts)
-  - [src/features/test-online/hooks/useTestHistory.ts](file:///d:/Web/english-center-mini/src/features/test-online/hooks/useTestHistory.ts)
-- **Cách khắc phục:** Bổ sung `studentId` vào `TestAttempt`, gán `studentId` từ `authSessionStore.getCurrentUser()?.id` khi tạo lượt thi mới, lọc theo `currentUserId` trong `historyApi.getHistory`, và đưa `studentScope` vào `queryKey` của `useTestHistory`.
-- **Kết quả kiểm thử:** Mỗi tài khoản học viên chỉ nhìn thấy đúng lịch sử thi của chính mình.
+## DANH SÁCH CÁC LỖI ĐÃ KHẮC PHỤC & KIỂM CHỨNG
 
----
-
-## 3. [BUG-03] (P1 – High) Phải bấm 2 lần ở lần thoát bài làm đầu tiên trong Test Online & Study Zone
-- **Hiện tượng:** Khi học viên đang làm đề thi TOEIC hoặc bài tập Study Zone, bấm nút Quay lại trên giao diện rồi bấm *"Thoát bài làm"* trong Modal xác nhận, lần bấm đầu tiên không thoát được mà giữ nguyên Modal; phải bấm lần thứ hai mới thoát.
-- **Nguyên nhân:** `handleConfirmExit` gọi `setAllowLeaveWithoutPrompt(true)` (cập nhật React state bất đồng bộ) rồi gọi ngay `navigate(...)`. Tại thời điểm `navigate()` chạy đồng bộ, `useBlocker` vẫn đọc giá trị state cũ (`false`) nên chặn điều hướng.
-- **File ảnh hưởng:**
-  - [src/features/test-online/pages/TestTakingPage.tsx](file:///d:/Web/english-center-mini/src/features/test-online/pages/TestTakingPage.tsx)
-  - [src/features/study-zone/pages/StudyExercisePage.tsx](file:///d:/Web/english-center-mini/src/features/study-zone/pages/StudyExercisePage.tsx)
-- **Cách khắc phục:** Thay state `allowLeaveWithoutPrompt` bằng `allowLeaveRef = useRef(false)` đồng bộ trong điều kiện của `useBlocker`.
-- **Kết quả kiểm thử:** Bấm *"Thoát bài làm"* thoát ngay lập tức ở lần bấm đầu tiên.
-
----
-
-## 4. [BUG-04] (P1 – High) `attemptApi.confirmPartIntroduction` thiếu nhánh gọi REST API thật
-- **Hiện tượng:** Trong `attemptApi.ts`, các hàm khác đều có nhánh `if (!USE_MOCK_API)` để gọi `httpClient`, riêng `confirmPartIntroduction` chỉ thao tác trên `attemptStorageService`.
-- **Nguyên nhân:** Thiếu nhánh gọi `httpClient.post` khi `USE_MOCK_API = false`.
-- **File ảnh hưởng:** [src/features/test-online/api/attemptApi.ts](file:///d:/Web/english-center-mini/src/features/test-online/api/attemptApi.ts)
-- **Cách khắc phục:** Bổ sung nhánh `if (!USE_MOCK_API)` gửi `POST /public/test-attempts/:attemptId/progress` với payload `{ action: 'confirm_part_intro', partNumber, firstQuestionId }`.
-- **Kết quả kiểm thử:** Toàn bộ 100% phương thức trong `attemptApi` đã có nhánh gọi Backend thật.
-
----
-
-## 5. [BUG-05] (P1 – High) `historyApi.getHistory` chưa truyền tham số lọc lên REST API khi tắt Mock
-- **Hiện tượng:** Khi chạy ở chế độ `!USE_MOCK_API`, `historyApi.getHistory(params)` gọi `httpClient.get(API_ENDPOINTS.testOnline.historyList)` mà bỏ quên đối số `params`.
-- **Nguyên nhân:** Thiếu truyền query parameters vào `httpClient.get`.
-- **File ảnh hưởng:** [src/features/test-online/api/historyApi.ts](file:///d:/Web/english-center-mini/src/features/test-online/api/historyApi.ts)
-- **Cách khắc phục:** Truyền đầy đủ `{ keyword, testSlug, status, fromDate, toDate, sortOrder }` vào `httpClient.get`.
-- **Kết quả kiểm thử:** Các bộ lọc lịch sử thi hoạt động đồng nhất ở cả chế độ Mock và API.
-
----
-
-## 6. [BUG-06] (P2 – Medium) Mở rộng `httpClient` và đồng bộ `courseId` giữa Student Portal & Courses
-- **Hiện tượng:** `httpClient.ts` mới chỉ hỗ trợ `GET`, `POST` với `credentials: 'omit'`; `courseId` trong dữ liệu mẫu của lớp học `HMC-S01` là `'crs-submarine-700'` trong khi danh mục khóa học công khai dùng `'submarine-toeic'`.
-- **File ảnh hưởng:**
-  - [src/services/api/httpClient.ts](file:///d:/Web/english-center-mini/src/services/api/httpClient.ts)
-  - [src/features/student-portal/mocks/studentPortalMockData.ts](file:///d:/Web/english-center-mini/src/features/student-portal/mocks/studentPortalMockData.ts)
-- **Cách khắc phục:** Mở rộng `httpClient` hỗ trợ `GET`, `POST`, `PATCH`, `DELETE` kèm `credentials: 'include'`; chuẩn hóa `courseId: 'submarine-toeic'`.
-- **Kết quả kiểm thử:** `npm run lint` và `npm run build` đạt **0 warnings, 0 errors**.
+| Mã lỗi | Phân khu | Hiện tượng lỗi / Bất cập ban đầu | Nguyên nhân gốc | Giải pháp khắc phục & File cập nhật | Trạng thái |
+| --- | --- | --- | --- | --- | --- |
+| `FIX-01` | Test Online & Study Zone | Khi làm cụm câu hỏi dài (Part 3, 4, 6, 7), chọn đáp án ở câu bên dưới khiến màn hình tự nhảy cuộn lên đầu trang. | Component hoặc hiệu ứng cuộn kích hoạt lại `window.scrollTo(0, 0)` theo mọi thay đổi đáp án thay vì chỉ khi đổi chỉ số câu/cụm câu. | Chỉ cuộn khi chuyển trang câu/cụm câu thực sự; giữ nguyên vị trí cuộn khi chọn đáp án A/B/C/D trong `TestTakingPage.tsx` và `StudyExercisePage.tsx`. | **Đã sửa & xác nhận** |
+| `FIX-02` | Authentication | Đăng nhập xong luôn ép chuyển vào `/student` (Khóa học của tôi) trong khi nhiều tài khoản chỉ thi thử / chưa đăng ký khóa học. | Mặc định redirect sau login đặt cứng `/student`. | Đổi điều hướng mặc định sau đăng nhập về `/` (hoặc `location.state.from` nếu đang vào trang yêu cầu đăng nhập) tại `AuthPage.tsx`. | **Đã sửa & xác nhận** |
+| `FIX-03` | Header & Dropdown | Thanh công cụ màu xanh không bám dính khi cuộn hoặc khi tách dính thì che khuất menu thả xuống của tài khoản ở Topbar. | `<header>` đặt `sticky` có `z-index` cao hơn khối Topbar phía trên, tạo stacking context đè lên `UserAccountDropdown`. | Đặt Topbar `relative z-[60]` và `<header>` xanh dương `sticky top-0 z-40` tại `src/layouts/components/Header.tsx`. | **Đã sửa & xác nhận** |
+| `FIX-04` | Test Online – Audio & Điều hướng Part 1–7 | (1) Part 1–4 cần phát âm thanh 1 lần nhưng ẩn thanh điều khiển và tự chuyển câu khi hết audio, khóa chuyển câu thủ công. (2) Part 5–7 cần mở chuyển câu/cụm câu tự do. (3) Nút `BẮT ĐẦU` ở màn giới thiệu Part bị lệch cột phải. | Cấu hình cũ hoặc ẩn hoàn toàn thẻ `<audio>` khiến không phát tiếng, hoặc khóa nhầm điều hướng cụm câu ở Reading; `PartIntroduction` chia 2 cột. | Dùng `<audio className="hidden" />` phát ngầm 1 lần và gọi `onEnded` tự chuyển tiếp cho Part 1–4 (`AudioPlayer.tsx`, `TestTakingPage.tsx`); mở khóa hoàn toàn chuyển câu/cụm câu Part 5–7 (`QuestionNavigator.tsx`); căn giữa nút `BẮT ĐẦU` dưới khung hướng dẫn cho mọi Part (`PartIntroduction.tsx`). | **Đã sửa & xác nhận** |
+| `FIX-05` | Test Online – Chữa bài & Khung câu hỏi | Khung câu hỏi giữa các Part khác nhau thiếu đồng nhất; cần mọi câu hỏi đều hỗ trợ `{ questionText, audioUrl, imageUrl }` và giao diện chữa bài đẹp, số liệu lịch sử đều nét. | Từng Part kiểm tra điều kiện riêng rẽ; bảng số chưa bật `tabular-nums`. | Xây dựng `questionMedia.ts` chuẩn hóa `{ questionText, audioUrl, imageUrl }` cho mọi câu Part 1–7, giữ khung 2 cột cố định với thanh dọc `#75BDEB`, hộp `Giải thích:` nền `#F0F7FF` in đậm câu đúng và đồng bộ `tabular-nums` tại `TestQuestionRenderer.tsx`, `TestHistoryPage.tsx`, `TestResultSummary.tsx`. | **Đã sửa & xác nhận** |
+| `FIX-06` | Bảo mật Dữ liệu (`IDOR`) | Khách chưa đăng nhập hoặc tài khoản `stu-002` có thể nhìn thấy lịch sử thi / xem kết quả chi tiết của `stu-001`. | `attemptService.ts` fallback sang `'stu-001'` khi chưa đăng nhập và `getAttemptById` / `getAttemptResult` / `getHistoryDetail` chưa đối chiếu `ownerId`. | Bắt buộc kiểm tra `attempt.userId === currentUserId` ở mọi hàm đọc/ghi trong `attemptService.ts`, `attemptApi.ts`, `historyApi.ts`; tách seed dữ liệu riêng cho `stu-001` và `stu-002`. | **Đã sửa & xác nhận** |
+| `FIX-07` | Test Online – Mã câu hỏi & Cấu hình Part | `TEST 5..10 – 2026` và `TEST 1..2 – 2025` dùng trùng tiền tố câu hỏi `t01..t06`; `TestDetailPage` cho phép tick chọn cả Part bị khóa chọn lẻ (`allowStandaloneSelection: false`). | Tái sử dụng tiền tố ngắn khi tạo mock ban đầu; thiếu guard trong `togglePart`. | Cấp tiền tố độc lập `'t01'`..`'t12'` cho toàn bộ 12 đề trong `testMockData.ts` và bổ sung kiểm tra `test.allowPartSelection` + `part.allowStandaloneSelection` trong `TestDetailPage.tsx`. | **Đã sửa & xác nhận** |
+| `FIX-08` | Đồng bộ Dữ liệu Dùng chung | Lệch tên `Cơ sở 1 – Cầu Giấy` vs `Cơ sở 1 – Hà Đông`; 2 dòng lịch khai giảng dùng `courseId` không tồn tại; tin tuyển dụng đóng vẫn bấm được nút ứng tuyển. | Nhập tay chuỗi văn bản ở nhiều file mock khác nhau thay vì tham chiếu ID chuẩn. | Tham chiếu trực tiếp `branches` và `courses` trong `jobs.ts`, `careerApi.ts`, `scheduleMockData.ts`, `studentPortalMockData.ts`, `branches.ts`; khóa nút ứng tuyển khi `closed` hoặc quá `deadline` tại `CareerDetailPage.tsx`. | **Đã sửa & xác nhận** |
+| `FIX-09` | Thương hiệu & Hệ màu | Xuất hiện song song tên thương hiệu cũ `HMC TOEIC` và `English Center` ở nhiều màn hình và dữ liệu mẫu. | Các module phát triển ở các giai đoạn khác nhau chưa quy chiếu về `centerInfo`. | Chuẩn hóa 100% thương hiệu hiển thị, tiêu đề trang, mã lớp/mã đề và khóa lưu trữ sang `English Center` trên toàn bộ source code. | **Đã sửa & xác nhận** |
+| `FIX-10` | Dọn dẹp Code thừa & Route trùng | Tồn tại 5 file component mồ côi không được import và 2 đường dẫn trùng lặp `/student/history` vs `/test-history`. | Nâng cấp giao diện nhưng chưa xóa file cũ và chưa hợp nhất route lịch sử. | Xóa sạch 5 component thừa, kích hoạt đầy đủ các barrel `index.ts` và chuyển `/student/history*` thành `<Navigate replace />` về `/test-history*` tại `src/app/router.tsx`. | **Đã sửa & xác nhận** |

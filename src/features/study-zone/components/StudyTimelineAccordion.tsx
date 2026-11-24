@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { BookOpen, ChevronDown, ChevronUp, FileCheck2 } from 'lucide-react'
+import { BookOpen, ChevronDown, ChevronUp } from 'lucide-react'
 import { STUDY_CATEGORY_PATHS, type StudyTopic } from '@/features/study-zone/types'
 
 interface StudyTimelineAccordionProps {
@@ -12,7 +12,7 @@ export default function StudyTimelineAccordion({
   topics,
   defaultOpenIndex = 0,
 }: StudyTimelineAccordionProps) {
-  const [openIds, setOpenIds] = useState<Record<string, boolean>>(() => {
+  const [openTopicIds, setOpenTopicIds] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {}
     if (topics[defaultOpenIndex]) {
       initial[topics[defaultOpenIndex].id] = true
@@ -20,8 +20,24 @@ export default function StudyTimelineAccordion({
     return initial
   })
 
-  const toggleItem = (id: string) => {
-    setOpenIds((prev) => ({
+  const [openSubTopicIds, setOpenSubTopicIds] = useState<Record<string, boolean>>(() => {
+    const initial: Record<string, boolean> = {}
+    const firstTopic = topics[defaultOpenIndex]
+    if (firstTopic?.subTopics?.[0]) {
+      initial[firstTopic.subTopics[0].id] = true
+    }
+    return initial
+  })
+
+  const toggleTopic = (id: string) => {
+    setOpenTopicIds((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }))
+  }
+
+  const toggleSubTopic = (id: string) => {
+    setOpenSubTopicIds((prev) => ({
       ...prev,
       [id]: !prev[id],
     }))
@@ -30,47 +46,41 @@ export default function StudyTimelineAccordion({
   return (
     <div className="relative flex flex-col gap-5">
       {topics.map((topic, index) => {
-        const isOpen = Boolean(openIds[topic.id])
+        const isOpen = Boolean(openTopicIds[topic.id])
         const isLast = index === topics.length - 1
         const topicDetailUrl = `${STUDY_CATEGORY_PATHS[topic.category]}/${topic.slug}`
+        const hasSubTopics = Boolean(topic.subTopics && topic.subTopics.length > 0)
 
         return (
           <div
             key={topic.id}
-            className="relative rounded-xl border border-[#DCEAF3] bg-white px-4 py-4 shadow-sm transition hover:border-[#75BDEB] sm:px-7 sm:py-5"
+            className="relative rounded-xl border border-[#DCEAF3] bg-white px-4 py-4 shadow-xs transition sm:px-7 sm:py-5"
           >
-            {/* Đường kẻ dọc nối các nút số thứ tự giống ảnh chụp giao diện */}
-            {!isLast && (
+            {/* Đường kẻ dọc màu xanh dương nhạt nối các chủ đề giống ảnh mẫu 1 */}
+            {(isOpen || !isLast) && (
               <div
                 aria-hidden="true"
-                className="pointer-events-none absolute bottom-[-24px] left-[33px] top-11 z-10 w-[3px] bg-[#75BDEB] sm:left-[45px]"
+                className={`pointer-events-none absolute left-[31px] top-12 z-10 w-[3px] bg-[#75BDEB] sm:left-[43px] ${
+                  isLast ? 'bottom-5' : 'bottom-[-24px]'
+                }`}
               />
             )}
 
-            {/* Hàng tiêu đề có thể bấm để mở rộng / thu gọn */}
+            {/* Hàng tiêu đề lớn có số thứ tự tròn màu xanh dương nhạt */}
             <button
               type="button"
-              onClick={() => toggleItem(topic.id)}
+              onClick={() => toggleTopic(topic.id)}
               aria-expanded={isOpen}
               className="flex w-full items-center justify-between gap-4 text-left"
             >
               <div className="flex items-center gap-3.5 sm:gap-5">
-                <span className="relative z-20 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#2878B8] text-sm font-extrabold text-white shadow-sm ring-4 ring-[#EAF6FD]">
+                <span className="relative z-20 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#75BDEB] text-sm font-bold text-white shadow-2xs">
                   {topic.orderNumber || index + 1}
                 </span>
 
-                <div>
-                  <h3 className="text-base font-extrabold tracking-tight text-[#243B53] sm:text-lg">
-                    {topic.title}
-                  </h3>
-                  <p className="mt-0.5 line-clamp-1 text-xs font-medium text-[#718096]">
-                    {topic.level}
-                    {topic.lessonsCount ? ` • ${topic.lessonsCount} bài học` : ''}
-                    {topic.wordsCount ? ` • ${topic.wordsCount} từ vựng` : ''}
-                    {topic.durationLabel ? ` • Thời lượng ${topic.durationLabel}` : ''}
-                    {` • ${topic.exercises.length} bài TEST`}
-                  </p>
-                </div>
+                <h3 className="text-base font-extrabold uppercase tracking-tight text-[#243B53] sm:text-lg">
+                  {topic.title}
+                </h3>
               </div>
 
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#243B53] transition hover:bg-[#EAF6FD]">
@@ -78,38 +88,88 @@ export default function StudyTimelineAccordion({
               </span>
             </button>
 
-            {/* Nội dung mở rộng: Danh sách các nút TEST 1, TEST 2, TEST 3... + Nút vào xem bài học chi tiết */}
+            {/* Nội dung mở rộng bên trong */}
             {isOpen && (
-              <div className="mt-4 border-t border-[#EAF6FD] pl-12 pt-4 sm:pl-14">
-                <div className="flex flex-wrap items-center gap-3.5">
-                  {topic.exercises.map((exercise) => (
-                    <Link
-                      key={exercise.id}
-                      to={`/study-zone/practice/${exercise.id}`}
-                      className="group flex min-w-[160px] flex-col rounded-lg border border-[#75BDEB] bg-white px-5 py-3 text-left shadow-xs transition hover:-translate-y-0.5 hover:border-[#2878B8] hover:bg-[#F5FAFE] sm:min-w-[200px]"
-                    >
-                      <span className="flex items-center justify-between gap-2 text-sm font-bold uppercase tracking-wide text-[#243B53] group-hover:text-[#2878B8]">
-                        <span>{exercise.title}</span>
-                        <FileCheck2 className="h-4 w-4 text-[#75BDEB] group-hover:text-[#2878B8]" />
-                      </span>
-                      <span className="mt-0.5 text-[11px] font-medium text-[#718096]">
-                        {exercise.subtitle} • {exercise.questionCount} câu
-                      </span>
-                    </Link>
-                  ))}
+              <div className="mt-4 pl-10 sm:pl-13">
+                {hasSubTopics ? (
+                  <div className="flex flex-col gap-3">
+                    {topic.subTopics!.map((sub) => {
+                      const isSubOpen = Boolean(openSubTopicIds[sub.id])
+                      return (
+                        <div
+                          key={sub.id}
+                          className="overflow-hidden rounded-md border border-[#E2E8F0] bg-white"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => toggleSubTopic(sub.id)}
+                            aria-expanded={isSubOpen}
+                            className="flex w-full items-center justify-between gap-3 bg-[#F4F6F8] px-4 py-3 text-left text-sm font-semibold uppercase tracking-wide text-[#243B53] transition hover:bg-[#EAF6FD]/70"
+                          >
+                            <span>{sub.title}</span>
+                            {isSubOpen ? (
+                              <ChevronUp className="h-4 w-4 shrink-0 text-[#243B53]" />
+                            ) : (
+                              <ChevronDown className="h-4 w-4 shrink-0 text-[#243B53]" />
+                            )}
+                          </button>
 
-                  <Link
-                    to={topicDetailUrl}
-                    className="inline-flex items-center gap-2 rounded-lg border border-[#DCEAF3] bg-[#EAF6FD] px-4 py-3 text-xs font-extrabold uppercase tracking-wide text-[#2878B8] transition hover:bg-[#A7D8F5]/50"
-                  >
-                    <BookOpen className="h-4 w-4" />
-                    <span>
-                      {topic.category === 'grammar' && 'Xem lý thuyết & Công thức'}
-                      {topic.category === 'vocabulary' && 'Học Flashcard Từ vựng'}
-                      {topic.category === 'listening' && 'Nghe Audio & Transcript'}
-                    </span>
-                  </Link>
-                </div>
+                          {isSubOpen && (
+                            <div className="grid grid-cols-2 gap-3 bg-white p-4 sm:grid-cols-3 md:grid-cols-5">
+                              {sub.exercises.map((ex) => (
+                                <Link
+                                  key={`${sub.id}-${ex.id}-${ex.title}`}
+                                  to={`/study-zone/practice/${ex.id}`}
+                                  className="flex items-center rounded-md border border-[#75BDEB] bg-white px-4 py-2.5 text-sm font-medium text-[#243B53] transition hover:bg-[#EAF6FD] hover:text-[#2878B8]"
+                                >
+                                  {ex.title}
+                                </Link>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+
+                    <div className="pt-1">
+                      <Link
+                        to={topicDetailUrl}
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-[#2878B8] hover:underline"
+                      >
+                        <BookOpen className="h-3.5 w-3.5" />
+                        <span>Xem tóm tắt lý thuyết & công thức chủ đề này</span>
+                      </Link>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-md border border-[#E2E8F0] bg-white p-4">
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
+                      {topic.exercises.map((exercise) => (
+                        <Link
+                          key={exercise.id}
+                          to={`/study-zone/practice/${exercise.id}`}
+                          className="flex items-center rounded-md border border-[#75BDEB] bg-white px-4 py-2.5 text-sm font-medium text-[#243B53] transition hover:bg-[#EAF6FD] hover:text-[#2878B8]"
+                        >
+                          {exercise.title}
+                        </Link>
+                      ))}
+                    </div>
+
+                    <div className="mt-3 border-t border-[#EAF6FD] pt-3">
+                      <Link
+                        to={topicDetailUrl}
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-[#2878B8] hover:underline"
+                      >
+                        <BookOpen className="h-3.5 w-3.5" />
+                        <span>
+                          {topic.category === 'grammar' && 'Xem lý thuyết & Công thức'}
+                          {topic.category === 'vocabulary' && 'Học Flashcard Từ vựng'}
+                          {topic.category === 'listening' && 'Nghe Audio & Transcript'}
+                        </span>
+                      </Link>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

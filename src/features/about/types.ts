@@ -21,7 +21,9 @@ export interface Branch {
 
 export type BranchInput = Omit<Branch, 'id'>
 
-export type PublishStatus = 'draft' | 'published'
+export type PublishStatus = 'draft' | 'published' | 'archived'
+
+export type JobStatus = 'draft' | 'published' | 'closed' | 'archived'
 
 export interface NewsPost {
   id: string
@@ -46,13 +48,14 @@ export interface JobPost {
   position: string
   type: JobType
   salary: string
+  branchId?: string
   location: string
   deadline: string // YYYY-MM-DD
   image: string
   description: string[]
   requirements: string[]
   benefits: string[]
-  status?: PublishStatus // không ghi = đang tuyển (published)
+  status?: JobStatus // không ghi = đang tuyển (published)
 }
 
 export type JobInput = Omit<JobPost, 'id'>

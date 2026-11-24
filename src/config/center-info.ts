@@ -52,11 +52,10 @@ export const consultationOptions = {
   levels: ['Mất gốc', 'Chưa rõ nền', '350–400 LR', '450–600 LR', '600–700 LR'],
   goals: ['450–600 LR', '700–900 LR', '250–300 SW'],
   routes: [
-    'FOUNDATION TOEIC (Xây nền)',
+    'FOUNDATION TOEIC (Xây dựng nền tảng)',
     "BEGINNER'S TOEIC (350+ TOEIC)",
     'CAMP BOMB TOEIC (450+ TOEIC)',
     'SUBMARINE TOEIC (700+ TOEIC)',
-    'MASTER TOEIC (250+/400 TOEIC SW)',
   ],
   times: ['Buổi sáng', 'Buổi chiều', 'Buổi tối', 'Bất kỳ thời gian nào'],
 }

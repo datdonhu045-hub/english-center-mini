@@ -59,11 +59,108 @@ export const DEMO_AUDIO_B = buildDemoToneWavDataUrl(523.25, 2)
 export const initialStudyTopics: StudyTopic[] = [
   // ----------------- NGỮ PHÁP (GRAMMAR) -----------------
   {
+    id: 'gram-03',
+    slug: '28-chu-de-ngu-phap-thuong-gap-nhat-trong-toeic',
+    category: 'grammar',
+    orderNumber: 1,
+    title: '28 CHỦ ĐỀ NGỮ PHÁP THƯỜNG GẶP NHẤT TRONG TOEIC',
+    shortDescription:
+      'Tổng hợp toàn diện 28 chủ điểm: Thành phần câu, Các thì của động từ, Từ loại, Giới từ, Liên từ, Câu bị động, Câu điều kiện và Mệnh đề quan hệ.',
+    thumbnail: 'https://images.unsplash.com/photo-1488190211105-8b0e65b80b4e?w=900',
+    level: 'Cơ bản (350+)',
+    lessonsCount: 28,
+    isPublished: true,
+    grammarSections: [
+      {
+        id: 'gs-28-1',
+        heading: 'Phân biệt Liên từ (Conjunctions) và Giới từ (Prepositions)',
+        paragraphs: [
+          'Liên từ theo sau là một mệnh đề hoàn chỉnh (S + V), trong khi Giới từ theo sau là một cụm danh từ (Noun Phrase) hoặc danh động từ (V-ing).',
+        ],
+        formulas: [
+          'Although / Even though / Though + S + V  <=>  Despite / In spite of + Noun / V-ing',
+          'Because / Since / As + S + V  <=>  Because of / Due to / Owing to + Noun / V-ing',
+        ],
+      },
+    ],
+    exercises: [
+      {
+        id: 'ex-gram-rc-test1',
+        title: 'Test 1',
+        subtitle: 'Thành phần câu, cấu trúc câu',
+        questionCount: 5,
+        durationMinutes: 10,
+        level: 'Cơ bản (350+)',
+      },
+      {
+        id: 'ex-gram-rc-test2',
+        title: 'Test 2',
+        subtitle: 'Thì của động từ & Bị động',
+        questionCount: 3,
+        durationMinutes: 8,
+        level: 'Cơ bản (350+)',
+      },
+    ],
+    subTopics: [
+      {
+        id: 'sub-gram-1',
+        title: 'THÀNH PHẦN CÂU, CẤU TRÚC CÂU',
+        exercises: [
+          { id: 'ex-gram-rc-test1', title: 'Test 1', subtitle: 'Đề số 1', questionCount: 5, level: 'Cơ bản (350+)' },
+          { id: 'ex-gram-rc-test2', title: 'Test 2', subtitle: 'Đề số 2', questionCount: 3, level: 'Cơ bản (350+)' },
+          { id: 'ex-gram-rc-test1', title: 'Test 3', subtitle: 'Đề số 3', questionCount: 5, level: 'Cơ bản (350+)' },
+          { id: 'ex-gram-rc-test2', title: 'Test 4', subtitle: 'Đề số 4', questionCount: 3, level: 'Cơ bản (350+)' },
+          { id: 'ex-gram-rc-test1', title: 'Test 5', subtitle: 'Đề số 5', questionCount: 5, level: 'Cơ bản (350+)' },
+        ],
+      },
+      {
+        id: 'sub-gram-2',
+        title: 'THÌ CỦA ĐỘNG TỪ - THÌ HIỆN TẠI ĐƠN',
+        exercises: [
+          { id: 'ex-gram-rc-test1', title: 'Test 1', subtitle: 'Hiện tại đơn 1', questionCount: 5, level: 'Cơ bản (350+)' },
+          { id: 'ex-gram-rc-test2', title: 'Test 2', subtitle: 'Hiện tại đơn 2', questionCount: 3, level: 'Cơ bản (350+)' },
+          { id: 'ex-gram-rc-test1', title: 'Test 3', subtitle: 'Hiện tại đơn 3', questionCount: 5, level: 'Cơ bản (350+)' },
+        ],
+      },
+      {
+        id: 'sub-gram-3',
+        title: 'THÌ CỦA ĐỘNG TỪ - THÌ HIỆN TẠI TIẾP DIỄN',
+        exercises: [
+          { id: 'ex-gram-rc-test1', title: 'Test 1', subtitle: 'Hiện tại tiếp diễn 1', questionCount: 5, level: 'Cơ bản (350+)' },
+          { id: 'ex-gram-rc-test2', title: 'Test 2', subtitle: 'Hiện tại tiếp diễn 2', questionCount: 3, level: 'Cơ bản (350+)' },
+        ],
+      },
+      {
+        id: 'sub-gram-4',
+        title: 'THÌ CỦA ĐỘNG TỪ - THÌ HIỆN TẠI HOÀN THÀNH',
+        exercises: [
+          { id: 'ex-gram-rc-test1', title: 'Test 1', subtitle: 'Hiện tại hoàn thành 1', questionCount: 5, level: 'Cơ bản (350+)' },
+          { id: 'ex-gram-rc-test2', title: 'Test 2', subtitle: 'Hiện tại hoàn thành 2', questionCount: 3, level: 'Cơ bản (350+)' },
+        ],
+      },
+      {
+        id: 'sub-gram-5',
+        title: 'THÌ CỦA ĐỘNG TỪ - THÌ QUÁ KHỨ ĐƠN',
+        exercises: [
+          { id: 'ex-gram-rc-test1', title: 'Test 1', subtitle: 'Quá khứ đơn 1', questionCount: 5, level: 'Cơ bản (350+)' },
+          { id: 'ex-gram-rc-test2', title: 'Test 2', subtitle: 'Quá khứ đơn 2', questionCount: 3, level: 'Cơ bản (350+)' },
+        ],
+      },
+      {
+        id: 'sub-gram-6',
+        title: 'THÌ CỦA ĐỘNG TỪ - THÌ QUÁ KHỨ TIẾP DIỄN',
+        exercises: [
+          { id: 'ex-gram-rc-test2', title: 'Test 1', subtitle: 'Quá khứ tiếp diễn 1', questionCount: 3, level: 'Cơ bản (350+)' },
+        ],
+      },
+    ],
+  },
+  {
     id: 'gram-01',
     slug: 'camp-bomb-toeic-rc-2026',
     category: 'grammar',
-    orderNumber: 1,
-    title: 'CAMP BOMB TOEIC RC 2026 – Các thì & Cấu trúc câu trọng tâm',
+    orderNumber: 2,
+    title: 'CAMP BOMB TOEIC RC 2026 – CÁC THÌ & CẤU TRÚC CÂU TRỌNG TÂM',
     shortDescription:
       'Hệ thống các thì tiếng Anh, sự hòa hợp chủ ngữ – động từ và các dạng câu hỏi ngữ pháp cốt lõi trong TOEIC Reading Part 5 & Part 6.',
     thumbnail: 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=900',
@@ -136,7 +233,7 @@ export const initialStudyTopics: StudyTopic[] = [
     id: 'gram-02',
     slug: 'submarine-toeic-rc-2026',
     category: 'grammar',
-    orderNumber: 2,
+    orderNumber: 3,
     title: 'SUBMARINE TOEIC RC 2026 – Câu điều kiện, Bị động & Mệnh đề quan hệ',
     shortDescription:
       'Huấn luyện chuyên sâu cấu trúc đảo ngữ câu điều kiện, rút gọn mệnh đề quan hệ và bẫy liên từ/giới từ mức điểm 700+ TOEIC.',
@@ -166,47 +263,11 @@ export const initialStudyTopics: StudyTopic[] = [
     exercises: [
       {
         id: 'ex-gram-rc-test2',
-        title: 'TEST 1',
+        title: 'Test 1',
         subtitle: 'Rút gọn mệnh đề & Đảo ngữ câu điều kiện',
         questionCount: 3,
         durationMinutes: 8,
         level: 'Nâng cao (700+)',
-      },
-    ],
-  },
-  {
-    id: 'gram-03',
-    slug: '28-chu-de-ngu-phap-thuong-gap-nhat-trong-toeic',
-    category: 'grammar',
-    orderNumber: 3,
-    title: '28 CHỦ ĐỀ NGỮ PHÁP THƯỜNG GẶP NHẤT TRONG TOEIC',
-    shortDescription:
-      'Tổng hợp toàn diện 28 chủ điểm: Danh từ, Động từ, Tính từ, Trạng từ, Giới từ, Mạo từ, Câu bị động, Câu điều kiện, Mệnh đề quan hệ và Câu tường thuật.',
-    thumbnail: 'https://images.unsplash.com/photo-1488190211105-8b0e65b80b4e?w=900',
-    level: 'Cơ bản (350+)',
-    lessonsCount: 10,
-    isPublished: true,
-    grammarSections: [
-      {
-        id: 'gs-28-1',
-        heading: 'Phân biệt Liên từ (Conjunctions) và Giới từ (Prepositions)',
-        paragraphs: [
-          'Liên từ theo sau là một mệnh đề hoàn chỉnh (S + V), trong khi Giới từ theo sau là một cụm danh từ (Noun Phrase) hoặc danh động từ (V-ing).',
-        ],
-        formulas: [
-          'Although / Even though / Though + S + V  <=>  Despite / In spite of + Noun / V-ing',
-          'Because / Since / As + S + V  <=>  Because of / Due to / Owing to + Noun / V-ing',
-        ],
-      },
-    ],
-    exercises: [
-      {
-        id: 'ex-gram-rc-test1',
-        title: 'TEST 1',
-        subtitle: 'Tổng ôn Ngữ pháp cốt lõi Part 5',
-        questionCount: 5,
-        durationMinutes: 10,
-        level: 'Cơ bản (350+)',
       },
     ],
   },

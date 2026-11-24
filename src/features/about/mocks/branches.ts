@@ -1,13 +1,14 @@
+import { centerInfo } from '@/config/center-info'
 import type { Branch } from '@/features/about/types'
 
-// NGUỒN DỮ LIỆU CƠ SỞ DUY NHẤT TOÀN HỆ THỐNG (dùng chung cho Bản đồ Cơ sở, Lịch khai giảng và Footer)
+// NGUỒN DỮ LIỆU CƠ SỞ DUY NHẤT TOÀN HỆ THỐNG (dùng chung cho Bản đồ Cơ sở, Lịch khai giảng, Tuyển dụng, Student Portal và Footer)
 export const branches: Branch[] = [
   {
     id: 'toeic-online',
     name: 'TOEIC Online (Trực tuyến tương tác)',
     shortLabel: 'TOEIC Online',
-    address: 'Học trực tuyến qua nền tảng Zoom & Hệ thống LMS English Center',
-    phone: '0900 000 000',
+    address: `Học trực tuyến qua nền tảng Zoom & Hệ thống LMS ${centerInfo.name}`,
+    phone: centerInfo.hotline,
     city: 'Trực tuyến',
     district: 'Toàn quốc',
     lat: 21.0285,

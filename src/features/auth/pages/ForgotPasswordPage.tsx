@@ -57,7 +57,7 @@ export function ForgotPasswordPage() {
                   Bạn có thể truy cập trực tiếp trang đặt lại mật khẩu mới để kiểm thử luồng khôi phục.
                 </p>
                 <Link
-                  to="/reset-password?token=hmc-demo-reset-token"
+                  to="/reset-password?token=ec-demo-reset-token"
                   className="mt-2.5 inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#2878B8] hover:underline"
                 >
                   <KeyRound className="h-3.5 w-3.5" />

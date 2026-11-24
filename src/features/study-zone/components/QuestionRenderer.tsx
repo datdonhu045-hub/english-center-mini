@@ -1,10 +1,8 @@
-import { Lightbulb, Volume2 } from 'lucide-react'
 import AudioPlayer from '@/features/study-zone/components/AudioPlayer'
 import ImageViewer from '@/features/study-zone/components/ImageViewer'
 import AnswerOption from '@/features/study-zone/components/AnswerOption'
 import type {
   Question,
-  QuestionContentBlock,
   QuestionReviewItem,
 } from '@/features/study-zone/types'
 
@@ -18,156 +16,204 @@ interface QuestionRendererProps {
   onSelectOption: (optionId: string) => void
 }
 
-function renderContentBlock(block: QuestionContentBlock) {
-  switch (block.type) {
-    case 'text': {
-      if (block.variant === 'instruction') {
-        return (
-          <p key={block.id} className="text-sm font-semibold text-[#2878B8] sm:text-base">
-            {block.content}
-          </p>
-        )
-      }
-      if (block.variant === 'passage') {
-        return (
-          <div
-            key={block.id}
-            className="rounded-xl border border-[#DCEAF3] bg-[#F8FAFC] p-5 text-[15.5px] font-normal leading-[1.78] text-[#1E293B]"
-          >
-            {block.content}
-          </div>
-        )
-      }
-      return (
-        <p
-          key={block.id}
-          className="rounded-xl border border-[#DCEAF3] bg-[#F8FAFC] p-4 text-[16px] font-semibold leading-[1.68] text-[#1E293B] sm:text-[17px]"
-        >
-          {block.content}
-        </p>
-      )
-    }
+function normalizeStudyQuestion(question: Question) {
+  const texts: Array<{ id: string; content: string; variant?: string }> = []
+  const images: Array<{ id: string; url: string; alt?: string; caption?: string }> = []
+  const audios: Array<{ id: string; url: string; durationSeconds?: number }> = []
 
-    case 'audio':
-      return (
-        <AudioPlayer
-          key={block.id}
-          src={block.url}
-          title={block.title}
-          defaultDurationSeconds={block.durationSeconds}
-        />
-      )
-
-    case 'image':
-      return (
-        <ImageViewer
-          key={block.id}
-          src={block.url}
-          alt={block.alt}
-          caption={block.caption}
-        />
-      )
+  if (question.questionText && question.questionText.trim().length > 0) {
+    texts.push({
+      id: `${question.id}-qtext`,
+      content: question.questionText.trim(),
+      variant: 'prompt',
+    })
   }
+
+  if (question.imageUrl && question.imageUrl.trim().length > 0) {
+    images.push({
+      id: `${question.id}-qimg`,
+      url: question.imageUrl.trim(),
+      alt: question.imageAlt,
+    })
+  }
+
+  if (question.audioUrl && question.audioUrl.trim().length > 0) {
+    audios.push({
+      id: `${question.id}-qaud`,
+      url: question.audioUrl.trim(),
+      durationSeconds: question.audioDurationSeconds,
+    })
+  }
+
+  for (const block of question.content ?? []) {
+    if (block.type === 'text' && block.content.trim().length > 0) {
+      texts.push({
+        id: block.id,
+        content: block.content.trim(),
+        variant: block.variant,
+      })
+    } else if (block.type === 'image' && block.url.trim().length > 0) {
+      images.push({
+        id: block.id,
+        url: block.url.trim(),
+        alt: block.alt,
+        caption: block.caption,
+      })
+    } else if (block.type === 'audio' && block.url.trim().length > 0) {
+      audios.push({
+        id: block.id,
+        url: block.url.trim(),
+        durationSeconds: block.durationSeconds,
+      })
+    }
+  }
+
+  return { texts, images, audios }
 }
 
-/**
- * Hệ thống Question Renderer dùng chung cho cả 3 danh mục (Ngữ pháp, Từ vựng, Luyện nghe):
- * - Hỗ trợ câu hỏi chỉ có chữ, chỉ có ảnh, chỉ có audio hoặc kết hợp đồng thời cả chữ + ảnh + audio.
- * - Khi câu hỏi có hình ảnh hoặc file ghi âm: tự động chia bố cục 2 cột giống hệt ảnh thiết kế mẫu (Cột trái: Audio + Ảnh + Transcript | Cột phải: Câu hỏi + Các đáp án A/B/C/D + Lời giải chi tiết).
- * - Khi câu hỏi chỉ có văn bản: hiển thị gọn gàng, giữ thứ tự các khối theo đúng dữ liệu từ Admin.
- */
+function renderTranscriptLines(
+  rawText: string,
+  questionNumber: number,
+  correctLabel?: string,
+) {
+  const lines = rawText
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+  const startsWithChoice = lines[0]?.startsWith('(A)')
+
+  return (
+    <div className="space-y-1">
+      {startsWithChoice && (
+        <p className="font-normal text-[#1E293B]">{questionNumber}.</p>
+      )}
+      {lines.map((line, idx) => {
+        const isCorrectChoiceLine =
+          Boolean(correctLabel) && line.startsWith(`(${correctLabel})`)
+        return (
+          <p
+            key={idx}
+            className={
+              isCorrectChoiceLine
+                ? 'font-bold text-[#111827]'
+                : 'font-normal text-[#334155]'
+            }
+          >
+            {line}
+          </p>
+        )
+      })}
+    </div>
+  )
+}
+
 export default function QuestionRenderer({
   question,
   questionIndex,
-  totalQuestions,
   selectedOptionId,
   submitted,
   review,
   onSelectOption,
 }: QuestionRendererProps) {
-  const mediaBlocks = question.content.filter((b) => b.type === 'audio' || b.type === 'image')
-  const textBlocks = question.content.filter((b) => b.type === 'text')
-  const hasMediaColumn = mediaBlocks.length > 0
+  const { texts, images, audios } = normalizeStudyQuestion(question)
+
+  const correctLabel = question.options.find(
+    (o) => o.id === review?.correctOptionId,
+  )?.label
+
+  const reviewBorderClass = submitted
+    ? review?.isCorrect
+      ? 'border-[#BBF7D0]'
+      : selectedOptionId
+        ? 'border-[#FECDD3]'
+        : 'border-[#DCEAF3]'
+    : 'border-transparent'
 
   return (
-    <div className="ec-reading-font overflow-hidden rounded-2xl border border-[#DCEAF3] bg-white shadow-sm">
-      <div
-        className={`grid grid-cols-1 ${
-          hasMediaColumn ? 'lg:grid-cols-12' : ''
-        }`}
-      >
-        {/* CỘT TRÁI (nếu câu hỏi có Audio và/hoặc Hình ảnh) */}
-        {hasMediaColumn && (
-          <section className="flex flex-col gap-4 border-b border-[#DCEAF3] bg-[#F5FAFE]/70 p-5 sm:p-6 lg:col-span-6 lg:border-b-0 lg:border-r">
-            <div className="flex items-center justify-between">
-              <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-[#2878B8]">
-                <Volume2 className="h-4 w-4" />
-                Tài liệu nghe & Hình ảnh mô tả
-              </span>
-              <span className="rounded-full bg-[#EAF6FD] px-3 py-1 text-xs font-bold text-[#2878B8]">
-                Câu {questionIndex + 1}/{totalQuestions}
-              </span>
-            </div>
-
-            {/* Hiển thị lần lượt các khối Audio / Hình ảnh theo đúng thứ tự Admin cấu hình */}
-            <div className="space-y-4">
-              {mediaBlocks.map((block) => renderContentBlock(block))}
-            </div>
-
-            {/* Audio Script & Dịch nghĩa (Chỉ mở khóa sau khi đã nộp bài) */}
-            {submitted && review?.audioTranscript && (
-              <div className="mt-2 rounded-xl border border-[#A7D8F5] bg-[#EAF6FD] p-4">
-                <p className="text-xs font-extrabold uppercase tracking-wide text-[#2878B8]">
-                  Lời thoại bài nghe (Audio Script):
-                </p>
-                <p className="mt-1.5 text-sm font-semibold text-[#243B53]">
-                  {review.audioTranscript}
-                </p>
-                {review.audioTranslation && (
-                  <p className="mt-1 text-xs italic text-[#718096]">
-                    {review.audioTranslation}
-                  </p>
-                )}
-              </div>
-            )}
-          </section>
-        )}
-
-        {/* CỘT PHẢI: Nội dung câu hỏi, Các phương án A/B/C/D & Giải thích sau khi nộp */}
+    <div className="ec-reading-font border-t border-[#EAF6FD] pt-5">
+      <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-2 lg:gap-8">
+        {/* CỘT TRÁI: Giữ nguyên khung cố định (Ảnh + Câu hỏi + Âm thanh; khuyết thành phần nào tự ẩn thành phần đó) */}
         <section
-          className={`flex flex-col justify-between p-5 sm:p-7 ${
-            hasMediaColumn ? 'lg:col-span-6' : ''
+          className={`relative flex min-h-[220px] flex-col gap-4 rounded-2xl p-5 sm:p-6 ${
+            submitted
+              ? 'border border-[#DCEAF3] bg-white pr-7 shadow-2xs sm:pr-8'
+              : 'bg-[#FAFBFD]'
           }`}
         >
-          <div>
-            {/* Tiêu đề câu hỏi */}
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#DCEAF3] pb-3.5">
-              <div className="flex items-center gap-2">
-                <span className="h-5 w-2 rounded-full bg-[#2878B8]" />
-                <h2 className="text-base font-extrabold text-[#243B53] sm:text-lg">
-                  Câu hỏi số {questionIndex + 1}
-                </h2>
-              </div>
+          {submitted && (
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute bottom-4 right-1.5 top-4 w-[5px] rounded-full bg-[#75BDEB]"
+            />
+          )}
 
-              {question.difficulty && (
-                <span className="rounded-md bg-[#F5FAFE] px-2.5 py-1 text-xs font-semibold text-[#718096]">
-                  Độ khó: <strong className="text-[#243B53]">{question.difficulty}</strong>
-                </span>
-              )}
-            </div>
+          <h2 className="text-[16px] font-bold text-[#243B53]">
+            Câu {questionIndex + 1}
+          </h2>
 
-            {/* Các khối văn bản của câu hỏi */}
-            {textBlocks.length > 0 && (
-              <div className="mt-4 space-y-3">
-                {textBlocks.map((block) => renderContentBlock(block))}
-              </div>
+          <div className="space-y-4">
+            {images.map((img) => (
+              <ImageViewer
+                key={img.id}
+                src={img.url}
+                alt={img.alt}
+                caption={submitted ? undefined : img.caption}
+              />
+            ))}
+
+            {texts.map((txt) =>
+              txt.variant === 'instruction' ? (
+                <p key={txt.id} className="text-sm font-semibold text-[#2878B8] sm:text-base">
+                  {txt.content}
+                </p>
+              ) : (
+                <p
+                  key={txt.id}
+                  className="whitespace-pre-line text-[15.5px] font-normal leading-[1.72] text-[#243B53] sm:text-[16px]"
+                >
+                  {txt.content}
+                </p>
+              ),
             )}
 
-            {/* Danh sách lựa chọn A, B, C, D */}
+            {audios.map((aud) => (
+              <AudioPlayer
+                key={aud.id}
+                src={aud.url}
+                showLabel
+                labelText="Âm thanh:"
+                defaultDurationSeconds={aud.durationSeconds}
+              />
+            ))}
+          </div>
+        </section>
+
+        {/* CỘT PHẢI: Giữ nguyên khung phương án A, B, C, D + Giải thích */}
+        <section
+          className={`relative flex min-h-[220px] flex-col justify-between rounded-2xl ${
+            submitted
+              ? 'border border-[#DCEAF3] bg-white p-4 pr-6 shadow-2xs sm:p-5 sm:pr-7'
+              : 'bg-[#FAFBFD] p-5 sm:p-6'
+          }`}
+        >
+          {submitted && (
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute bottom-4 right-1.5 top-4 w-[5px] rounded-full bg-[#75BDEB]"
+            />
+          )}
+
+          <div
+            className={
+              submitted
+                ? `rounded-xl border bg-white p-4 sm:p-5 ${reviewBorderClass}`
+                : ''
+            }
+          >
             <div
               role="radiogroup"
               aria-label={`Các phương án câu ${questionIndex + 1}`}
-              className="mt-5 space-y-3.5"
+              className="space-y-2.5"
             >
               {question.options.map((option) => (
                 <AnswerOption
@@ -183,21 +229,41 @@ export default function QuestionRenderer({
               ))}
             </div>
 
-            {/* Hộp Giải thích chi tiết (Chỉ hiển thị sau khi đã nộp bài và chấm điểm) */}
             {submitted && review && (
-              <div className="mt-6 rounded-2xl border border-[#A7D8F5] bg-gradient-to-br from-[#EAF6FD] to-[#F5FAFE] p-5">
-                <div className="mb-2.5 flex items-center gap-2">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-md bg-[#2878B8] text-white">
-                    <Lightbulb className="h-3.5 w-3.5" />
-                  </span>
-                  <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#243B53] sm:text-sm">
-                    Giải thích chi tiết & Phân tích đáp án
-                  </h3>
-                </div>
+              <div className="mt-4 rounded-xl bg-[#F0F7FF] p-5 text-[14.5px] leading-[1.72] text-[#1E293B]">
+                <h3 className="text-[15px] font-bold text-[#111827]">Giải thích:</h3>
 
-                <div className="space-y-1.5 whitespace-pre-line text-sm leading-relaxed text-[#243B53]">
-                  {review.explanation}
-                </div>
+                {review.audioTranscript && (
+                  <div className="mt-2.5">
+                    {renderTranscriptLines(
+                      review.audioTranscript,
+                      questionIndex + 1,
+                      correctLabel,
+                    )}
+                  </div>
+                )}
+
+                {review.audioTranslation && (
+                  <div className="mt-4">
+                    {renderTranscriptLines(
+                      review.audioTranslation,
+                      questionIndex + 1,
+                      correctLabel,
+                    )}
+                  </div>
+                )}
+
+                {review.explanation && (
+                  <div
+                    className={`whitespace-pre-line font-normal text-[#334155] ${
+                      review.audioTranscript || review.audioTranslation
+                        ? 'mt-3.5 border-t border-[#DCEAF3] pt-3 text-[14px]'
+                        : 'mt-2'
+                    }`}
+                  >
+                    {review.explanation}
+                  </div>
+                )}
               </div>
             )}
           </div>
