@@ -1,7 +1,11 @@
 {
   "files": [],
   "references": [
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" }
+    { "path": "./packages/utils" },
+    { "path": "./packages/contracts" },
+    { "path": "./packages/api-client" },
+    { "path": "./packages/ui" },
+    { "path": "./apps/client-web" },
+    { "path": "./apps/staff-web" }
   ]
 }

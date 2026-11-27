@@ -3,28 +3,35 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "workspaces": [
+    "apps/client-web",
+    "apps/staff-web",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "oxlint",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "@tailwindcss/vite": "^4.3.5",
-    "@tanstack/react-query": "^5.108.0",
-    "lucide-react": "^1.73.0",
-    "react": "^19.3.1",
-    "react-dom": "^19.3.1",
-    "react-router-dom": "^7.18.5",
-    "tailwindcss": "^4.3.5"
+    "dev": "npm run dev:client",
+    "dev:client": "npm run dev --workspace=@english-center/client-web",
+    "dev:staff": "npm run dev --workspace=@english-center/staff-web",
+    "build:client": "npm run build --workspace=@english-center/client-web",
+    "build:staff": "npm run build --workspace=@english-center/staff-web",
+    "build": "npm run build:client && npm run build:staff",
+    "lint:packages": "oxlint -c .oxlintrc.json packages",
+    "lint:client": "npm run lint --workspace=@english-center/client-web",
+    "lint:staff": "npm run lint --workspace=@english-center/staff-web",
+    "lint": "npm run lint:packages && npm run lint:client && npm run lint:staff",
+    "typecheck:packages": "npm run typecheck --workspace=@english-center/utils && npm run typecheck --workspace=@english-center/contracts && npm run typecheck --workspace=@english-center/api-client && npm run typecheck --workspace=@english-center/ui",
+    "typecheck:client": "npm run typecheck --workspace=@english-center/client-web",
+    "typecheck:staff": "npm run typecheck --workspace=@english-center/staff-web",
+    "typecheck": "npm run typecheck:packages && npm run typecheck:client && npm run typecheck:staff",
+    "test:client": "npm run test --workspace=@english-center/client-web",
+    "test:staff": "npm run test --workspace=@english-center/staff-web",
+    "test": "npm run test:client && npm run test:staff",
+    "preview:client": "npm run preview --workspace=@english-center/client-web",
+    "preview:staff": "npm run preview --workspace=@english-center/staff-web"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",
-    "@types/react": "^19.3.0",
-    "@types/react-dom": "^19.3.0",
-    "@vitejs/plugin-react": "^6.1.2",
     "oxlint": "^1.90.0",
-    "typescript": "~7.0.2",
-    "vite": "^8.3.6"
+    "typescript": "~7.0.2"
   }
 }

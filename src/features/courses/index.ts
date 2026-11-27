@@ -1,6 +1,0 @@
-export { default as CoursesPage } from '@/features/courses/pages/CoursesPage'
-export { default as CourseDetailPage } from '@/features/courses/pages/CourseDetailPage'
-export { courseApi } from '@/features/courses/api/courseApi'
-export { useCourses } from '@/features/courses/hooks/useCourses'
-export { useCourseDetail } from '@/features/courses/hooks/useCourseDetail'
-export * from '@/features/courses/types'

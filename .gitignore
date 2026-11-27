@@ -7,12 +7,21 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies & Build outputs
 node_modules
 dist
 dist-ssr
+apps/*/dist
+apps/*/dist-ssr
+packages/*/dist
+*.tsbuildinfo
+
+# Environment variables (keep .env.example templates tracked)
 .env
-.env.local
+.env.*
 *.local
+!.env.example
+!apps/*/.env.example
 
 # Editor directories and files
 .vscode/*
