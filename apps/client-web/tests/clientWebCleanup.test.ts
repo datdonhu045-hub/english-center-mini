@@ -304,7 +304,7 @@ describe('5. Public APIs, Auth Portal Separation & Student Portal Synchronizatio
       await Promise.all([
         branchApi.getPublicBranches(),
         courseApi.getPublicCourses(),
-        scheduleApi.getPublicSchedules({ month: 11, year: 2026 }),
+        scheduleApi.getPublicSchedules({ branchId: 'cs-ha-dong', month: 11, year: 2026 }),
         studentPortalRepository.getPortalDataset('stu-hv-001'),
         studentPortalRepository.getTuitionOverview('stu-hv-001'),
         studentPortalRepository.getPortalDataset('stu-real-01', {

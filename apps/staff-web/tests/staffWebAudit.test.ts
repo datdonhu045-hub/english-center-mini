@@ -79,7 +79,7 @@ describe('Suite 0: Synchronized Review Seed & Zero Demo Accounts', () => {
   it('populates synchronized review datasets across Staff modules and rejects legacy .demo logins', async () => {
     const accounts = await accountsApi.listAccounts()
     assert.equal(accounts.length >= 5, true)
-    assert.equal(accounts.some((acc) => acc.username.endsWith('.demo')), false)
+    assert.equal(accounts.some((acc) => (acc.username ?? '').endsWith('.demo')), false)
 
     await assert.rejects(() =>
       authService.login({

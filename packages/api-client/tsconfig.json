@@ -4,7 +4,10 @@
     "tsBuildInfoFile": "../../node_modules/.tmp/pkg-api-client.tsbuildinfo",
     "lib": ["ES2023", "DOM"],
     "module": "esnext",
-    "moduleResolution": "bundler"
+    "moduleResolution": "bundler",
+    "paths": {
+      "@english-center/contracts": ["../contracts/src/index.ts"]
+    }
   },
   "include": ["src"]
 }

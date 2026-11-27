@@ -365,6 +365,7 @@ export async function seedStaffTestWorkspace(): Promise<void> {
         commitment: {
           advisedOutcomeLabel: '450+ TOEIC',
           attendanceAndHomeworkConditions: 'Tham gia tối thiểu 90% số buổi học.',
+          consultationNote: 'Học viên rảnh các buổi tối 2-4-6 tại Hà Đông.',
           customerConfirmedInfo: true,
         },
         estimatedTuition: {
@@ -652,7 +653,7 @@ export async function seedStaffTestWorkspace(): Promise<void> {
       title: 'Đề luyện tập TOEIC Mini Test 01',
       collectionGroup: 'ETS Practice',
       skillCategory: 'listening_reading',
-      difficulty: 'Intermediate',
+      difficulty: 'Trung cấp (550+)',
       testType: 'Mini Test',
       durationMinutes: 30,
       standardTotalQuestions: 2,
